@@ -1,0 +1,26 @@
+pragma: "0.0.1";
+
+
+class contract Math {
+
+    pub func add(a: uint64, b: uint64): uint64 {
+        return (a + b);
+    }
+
+    pub func sub(a: uint64, b: uint64): uint64 {
+        return (a - b);
+    }
+
+    pub func mul(a: uint64, b: uint64): uint64 {
+        return (a * b);
+    }
+
+    pub func div(a: uint64, b: uint64): uint64 {
+        return (a / b);
+    }
+
+    pub func mod(a: uint64, b: uint64): uint64 {
+        return (a % b);
+    }
+
+}
