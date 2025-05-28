@@ -16,4 +16,5 @@ const (
 	OP_GT       = 0x24
 	OP_GTE      = 0x25
 	OP_RETURN   = 0xFF
+	
 )

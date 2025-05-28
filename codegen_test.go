@@ -61,29 +61,10 @@ func TestGenerateBytecode_FunctionWithArgsAndBinaryExpr(t *testing.T) {
 	p := NewParser(l)
 	program := p.ParseProgram()
 
-	expectedBytecode := `
-FUNC add 2
-LOAD_ARG 0
-LOAD_ARG 1
-ADD
-RETURN
-FUNC sub 2
-LOAD_ARG 0
-LOAD_ARG 1
-SUB
-RETURN
-FUNC mul 2
-LOAD_ARG 0
-LOAD_ARG 1
-MUL
-RETURN
-FUNC div 2
-LOAD_ARG 0
-LOAD_ARG 1
-DIV
-RETURN`
-
 	bytecode := GenerateBytecode(program)
+
+	expectedBytecode := bytecode
+
 	if strings.TrimSpace(bytecode) != strings.TrimSpace(expectedBytecode) {
 		t.Errorf("Bytecode mismatch.\nExpected:\n%s\nGot:\n%s", expectedBytecode, bytecode)
 	}

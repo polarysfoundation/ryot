@@ -30,6 +30,13 @@ const (
 	MINUS     = "-"
 	ASTERISK  = "*"
 	SLASH     = "/"
+	EQ        = "=="
+	NOT_EQ    = "!="
+	LT        = "<"
+	GT        = ">"
+	LTE       = "<="
+	GTE       = ">="
+	PERCENT   = "%"
 )
 
 type Token struct {
@@ -99,6 +106,8 @@ func (l *Lexer) NextToken() Token {
 		return l.newToken(COMMA, ",")
 	case ';':
 		return l.newToken(SEMICOLON, ";")
+	case '%':
+		return l.newToken(PERCENT, "%")
 	case 0:
 		return Token{Type: EOF, Literal: ""}
 	default:

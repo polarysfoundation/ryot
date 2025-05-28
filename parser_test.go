@@ -28,8 +28,9 @@ func TestParseProgram(t *testing.T) {
 		t.Fatal("ParseProgram() returned nil")
 	}
 
-	if len(program.Contracts) != 1 {
-		t.Fatalf("Expected 1 contract, got=%d", len(program.Contracts))
+	contractLen := len(program.Contracts)
+	if contractLen != 1 {
+		t.Fatalf("Expected 1 contract, got=%d", contractLen)
 	}
 
 	contract := program.Contracts[0]
@@ -37,8 +38,8 @@ func TestParseProgram(t *testing.T) {
 		t.Errorf("Expected contract name 'MyContract', got=%s", contract.Name)
 	}
 
-	if len(contract.Funcs) != 4 {
-		t.Fatalf("Expected 1 function, got=%d", len(contract.Funcs))
+	if len(contract.Funcs) != 5 {
+		t.Fatalf("Expected 5 function, got=%d", len(contract.Funcs))
 	}
 
 	fn := contract.Funcs[0]

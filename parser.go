@@ -57,7 +57,11 @@ func (p *Parser) ParseProgram() *Program {
 }
 
 func (p *Parser) parseVersion() *ContractDecl {
-	p.nextToken() // skip COLON
+	if p.curToken.Type == COLON {
+		p.nextToken()
+	} else {
+		p.errors = append(p.errors, fmt.Sprintf("expected ':' after 'pragma', got %s", p.curToken.Type))
+	}
 
 	contract := &ContractDecl{
 		Version: p.curToken.Literal,
@@ -192,6 +196,15 @@ func (p *Parser) parseExpression() Expression {
 		left = &BinaryExpr{
 			Left:     left,
 			Operator: "/",
+			Right:    right,
+		}
+	case PERCENT:
+		p.nextToken() // consume '-'
+		p.nextToken() // move to right-hand expression
+		right := p.parsePrimary()
+		left = &BinaryExpr{
+			Left:     left,
+			Operator: "%",
 			Right:    right,
 		}
 	}
