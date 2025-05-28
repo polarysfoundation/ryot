@@ -48,17 +48,16 @@ RETURN`
 }
 
 func TestGenerateBytecode_FunctionWithArgsAndBinaryExpr(t *testing.T) {
-	source := `
-	pragma: "0.1.0";
-	
-	
-	class contract MyContract {
-		pub func add(a: uint64, b: uint64): uint64 {
-			return (a + b);
-		}
-	}`
+	file := "example/math.ry"
 
-	l := NewLexer(source)
+	data, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatalf("Error reading file: %v", err)
+	}
+
+	input := string(data)
+
+	l := NewLexer(input)
 	p := NewParser(l)
 	program := p.ParseProgram()
 
@@ -67,6 +66,21 @@ FUNC add 2
 LOAD_ARG 0
 LOAD_ARG 1
 ADD
+RETURN
+FUNC sub 2
+LOAD_ARG 0
+LOAD_ARG 1
+SUB
+RETURN
+FUNC mul 2
+LOAD_ARG 0
+LOAD_ARG 1
+MUL
+RETURN
+FUNC div 2
+LOAD_ARG 0
+LOAD_ARG 1
+DIV
 RETURN`
 
 	bytecode := GenerateBytecode(program)
@@ -75,7 +89,7 @@ RETURN`
 	}
 
 	outputFilename := "tests/test_func_2.ryc"
-	err := os.WriteFile(outputFilename, []byte(bytecode), 0644)
+	err = os.WriteFile(outputFilename, []byte(bytecode), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write bytecode to file %s: %v", outputFilename, err)
 	} else {
@@ -84,16 +98,6 @@ RETURN`
 }
 
 func TestBytecodeEmitter_EmitExpression(t *testing.T) {
-	// Setup currentFunc for resolveArgIndex
-	originalCurrentFunc := currentFunc
-	currentFunc = &FuncDecl{
-		Args: []Argument{
-			{Name: "x", Type: "uint64"},
-			{Name: "y", Type: "uint64"},
-		},
-	}
-	defer func() { currentFunc = originalCurrentFunc }() // Restore
-
 	tests := []struct {
 		name             string
 		expr             Expression
@@ -123,6 +127,26 @@ func TestBytecodeEmitter_EmitExpression(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			emitter := NewBytecodeEmitter()
+
+			// Setup currentFunc based on test case
+			switch tt.name {
+			case "Identifier":
+				emitter.currentFunc = &FuncDecl{
+					Args: []Argument{
+						{Name: "x"},
+						{Name: "y"},
+					},
+				}
+			case "BinaryExpr":
+				emitter.currentFunc = &FuncDecl{
+					Args: []Argument{
+						{Name: "x"},
+					},
+				}
+			default:
+				// No setup needed for other cases
+			}
+
 			emitter.EmitExpression(tt.expr)
 			bytecode := strings.Join(emitter.Instructions, "\n")
 			if strings.TrimSpace(bytecode) != strings.TrimSpace(tt.expectedBytecode) {
@@ -133,23 +157,21 @@ func TestBytecodeEmitter_EmitExpression(t *testing.T) {
 }
 
 func TestBytecodeEmitter_resolveArgIndex_NotFound(t *testing.T) {
-	// Setup currentFunc
-	originalCurrentFunc := currentFunc
-	currentFunc = &FuncDecl{
-		Name: "testFunc",
-		Args: []Argument{{Name: "arg1", Type: "uint64"}},
-	}
-	defer func() { currentFunc = originalCurrentFunc }() // Restore
-
 	emitter := NewBytecodeEmitter()
+	emitter.currentFunc = &FuncDecl{Args: []Argument{}} // Initialize currentFunc with empty Args
 
 	defer func() {
 		if r := recover(); r == nil {
 			t.Errorf("resolveArgIndex did not panic for unknown argument")
 		} else {
+			errMsg, ok := r.(string)
+			if !ok {
+				t.Errorf("Expected panic with string type, got: %v", r)
+				return
+			}
 			expectedPanicMsg := "arg not found: unknownArg"
-			if r.(string) != expectedPanicMsg {
-				t.Errorf("Panic message mismatch. Expected: %q, Got: %q", expectedPanicMsg, r.(string))
+			if errMsg != expectedPanicMsg {
+				t.Errorf("Panic message mismatch. Expected: %q, Got: %q", expectedPanicMsg, errMsg)
 			}
 		}
 	}()

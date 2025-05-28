@@ -7,6 +7,7 @@ import (
 
 type BytecodeEmitter struct {
 	Instructions []string
+	currentFunc  *FuncDecl
 }
 
 func NewBytecodeEmitter() *BytecodeEmitter {
@@ -22,6 +23,7 @@ func (e *BytecodeEmitter) Emit(instr string, args ...interface{}) {
 }
 
 func (e *BytecodeEmitter) EmitFunction(f *FuncDecl) {
+	e.currentFunc = f
 	e.Emit(fmt.Sprintf("FUNC %s %d", f.Name, len(f.Args)))
 
 	for _, stmt := range f.Body {
@@ -29,6 +31,8 @@ func (e *BytecodeEmitter) EmitFunction(f *FuncDecl) {
 		case *ReturnStatement:
 			e.EmitExpression(s.Expr)
 			e.Emit("RETURN")
+		default:
+			panic(fmt.Sprintf("unsupported stmt: %T", s))
 		}
 	}
 }
@@ -41,6 +45,28 @@ func (e *BytecodeEmitter) EmitExpression(expr Expression) {
 		switch exp.Operator {
 		case "+":
 			e.Emit("ADD")
+		case "-":
+			e.Emit("SUB")
+		case "*":
+			e.Emit("MUL")
+		case "/":
+			e.Emit("DIV")
+		case "%":
+			e.Emit("MOD")
+		case "==":
+			e.Emit("EQ")
+		case "!=":
+			e.Emit("NEQ")
+		case "<":
+			e.Emit("LT")
+		case "<=":
+			e.Emit("LTE")
+		case ">":
+			e.Emit("GT")
+		case ">=":
+			e.Emit("GTE")
+		default:
+			panic("unknown operator: " + exp.Operator)
 		}
 	case *Identifier:
 		idx := e.resolveArgIndex(exp.Name)
@@ -53,7 +79,7 @@ func (e *BytecodeEmitter) EmitExpression(expr Expression) {
 }
 
 func (e *BytecodeEmitter) resolveArgIndex(name string) int {
-	for i, a := range currentFunc.Args {
+	for i, a := range e.currentFunc.Args {
 		if a.Name == name {
 			return i
 		}
@@ -61,17 +87,12 @@ func (e *BytecodeEmitter) resolveArgIndex(name string) int {
 	panic("arg not found: " + name)
 }
 
-var currentFunc *FuncDecl
-
 func GenerateBytecode(prog *Program) string {
 	emitter := NewBytecodeEmitter()
-
 	for _, contract := range prog.Contracts {
 		for _, fn := range contract.Funcs {
-			currentFunc = fn
 			emitter.EmitFunction(fn)
 		}
 	}
-
 	return strings.Join(emitter.Instructions, "\n")
 }

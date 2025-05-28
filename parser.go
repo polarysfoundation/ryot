@@ -95,7 +95,7 @@ func (p *Parser) parseFuncDecl(isPublic bool) *FuncDecl {
 	p.expectPeek(LPAREN)
 
 	args := []Argument{}
-	for p.peekToken.Type != RPAREN {
+	for p.peekToken.Type != RPAREN && p.peekToken.Type != EOF {
 		p.nextToken()
 		argName := p.curToken.Literal
 		p.expectPeek(COLON)
@@ -157,13 +157,41 @@ func (p *Parser) parseReturnStatement() *ReturnStatement {
 func (p *Parser) parseExpression() Expression {
 	left := p.parsePrimary()
 
-	for p.peekToken.Type == PLUS {
+	switch p.peekToken.Type {
+	case PLUS:
 		p.nextToken() // consume '+'
 		p.nextToken() // move to right-hand expression
 		right := p.parsePrimary()
 		left = &BinaryExpr{
 			Left:     left,
 			Operator: "+",
+			Right:    right,
+		}
+	case MINUS:
+		p.nextToken() // consume '-'
+		p.nextToken() // move to right-hand expression
+		right := p.parsePrimary()
+		left = &BinaryExpr{
+			Left:     left,
+			Operator: "-",
+			Right:    right,
+		}
+	case ASTERISK:
+		p.nextToken() // consume '-'
+		p.nextToken() // move to right-hand expression
+		right := p.parsePrimary()
+		left = &BinaryExpr{
+			Left:     left,
+			Operator: "*",
+			Right:    right,
+		}
+	case SLASH:
+		p.nextToken() // consume '-'
+		p.nextToken() // move to right-hand expression
+		right := p.parsePrimary()
+		left = &BinaryExpr{
+			Left:     left,
+			Operator: "/",
 			Right:    right,
 		}
 	}

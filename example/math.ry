@@ -23,4 +23,5 @@ class contract Math {
         return (a % b);
     }
 
+
 }

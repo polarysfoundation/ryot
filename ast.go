@@ -24,10 +24,7 @@ type Argument struct {
 }
 
 type Statement interface{}
-
-type ReturnStatement struct {
-	Expr Expression
-}
+type ReturnStatement struct{ Expr Expression }
 
 type Expression interface{}
 
@@ -37,10 +34,6 @@ type BinaryExpr struct {
 	Right    Expression
 }
 
-type Identifier struct {
-	Name string
-}
+type Identifier struct{ Name string }
 
-type UInt64Literal struct {
-	Value uint64
-}
+type UInt64Literal struct{ Value uint64 }

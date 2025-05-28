@@ -79,6 +79,12 @@ func (l *Lexer) NextToken() Token {
 		return l.newToken(STRING, l.readString())
 	case '+':
 		return l.newToken(PLUS, "+")
+	case '-':
+		return l.newToken(MINUS, "-")
+	case '*':
+		return l.newToken(ASTERISK, "*")
+	case '/':
+		return l.newToken(SLASH, "/")
 	case ':':
 		return l.newToken(COLON, ":")
 	case '(':

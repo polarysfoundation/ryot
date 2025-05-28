@@ -1,22 +1,25 @@
 package ryot
 
 import (
+	"fmt"
+	"os"
 	"strconv"
 	"testing"
 )
 
 // TestParseProgram valida el parseo completo de un contrato con función pública y return con expresión binaria.
 func TestParseProgram(t *testing.T) {
-	input := `
-	pragma: "0.1.0";
-	
-	
-	class contract MyContract {
-		pub func add(a: uint64, b: uint64): uint64 {
-			return (a + b);
-		}
+	file := "example/math.ry"
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatalf("Error reading file: %v", err)
 	}
-	`
+
+	input := string(data)
+
+	fmt.Println(input)
+
 	l := NewLexer(input)
 	p := NewParser(l)
 	program := p.ParseProgram()
@@ -30,11 +33,11 @@ func TestParseProgram(t *testing.T) {
 	}
 
 	contract := program.Contracts[0]
-	if contract.Name != "MyContract" {
+	if contract.Name != "Math" {
 		t.Errorf("Expected contract name 'MyContract', got=%s", contract.Name)
 	}
 
-	if len(contract.Funcs) != 1 {
+	if len(contract.Funcs) != 4 {
 		t.Fatalf("Expected 1 function, got=%d", len(contract.Funcs))
 	}
 
