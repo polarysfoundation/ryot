@@ -48,7 +48,7 @@ RETURN`
 }
 
 func TestGenerateBytecode_FunctionWithArgsAndBinaryExpr(t *testing.T) {
-	file := "example/math.ry"
+	file := "example/storage.ry"
 
 	data, err := os.ReadFile(file)
 	if err != nil {

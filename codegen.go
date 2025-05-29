@@ -5,6 +5,17 @@ import (
 	"strings"
 )
 
+const (
+	STORAGE_DECL    = "DECL_STORAGE" // Declara variable de storage
+	STORAGE_LOAD    = "SLOAD"        // Carga valor del storage
+	STORAGE_STORE   = "SSTORE"       // Guarda valor en storage
+	STORAGE_DELETE  = "SDELETE"      // Elimina del storage
+	MSTORAGE_LOAD   = "MLOAD"        // Carga valor de memoria
+	MSTORAGE_STORE  = "MSTORE"       // Guarda valor en memoria
+	MSTORAGE_DELETE = "MDELETE"      // Elimina valor de memoria
+
+)
+
 type BytecodeEmitter struct {
 	Instructions []string
 	currentFunc  *FuncDecl
@@ -28,9 +39,18 @@ func (e *BytecodeEmitter) EmitFunction(f *FuncDecl) {
 
 	for _, stmt := range f.Body {
 		switch s := stmt.(type) {
+		case *StorageAssign:
+			e.EmitExpression(s.Key)
+			e.EmitExpression(s.Value)
+			e.Emit(STORAGE_STORE, s.Var)
 		case *ReturnStatement:
 			e.EmitExpression(s.Expr)
 			e.Emit("RETURN")
+		case *Variable:
+			e.EmitExpression(s.Value)
+			e.Emit(MSTORAGE_STORE, s.Name)
+			e.Emit(MSTORAGE_LOAD, s.Name)
+			e.EmitExpression(s.Value)
 		default:
 			panic(fmt.Sprintf("unsupported stmt: %T", s))
 		}
@@ -73,6 +93,9 @@ func (e *BytecodeEmitter) EmitExpression(expr Expression) {
 		e.Emit("LOAD_ARG", idx)
 	case *UInt64Literal:
 		e.Emit("PUSH", exp.Value)
+	case *StorageAccess:
+		e.EmitExpression(exp.Key)
+		e.Emit(STORAGE_LOAD, exp.Var)
 	default:
 		panic(fmt.Sprintf("unsupported expression: %T", exp))
 	}
@@ -90,9 +113,17 @@ func (e *BytecodeEmitter) resolveArgIndex(name string) int {
 func GenerateBytecode(prog *Program) string {
 	emitter := NewBytecodeEmitter()
 	for _, contract := range prog.Contracts {
-		for _, fn := range contract.Funcs {
-			emitter.EmitFunction(fn)
+
+		emitter.Emit("PRAGMA", contract.Version+"\n")
+
+		for _, st := range contract.Storages {
+			emitter.Emit(STORAGE_DECL, st.Name+"\n")
 		}
+
+		for _, f := range contract.Funcs {
+			emitter.EmitFunction(f)
+		}
+
 	}
 	return strings.Join(emitter.Instructions, "\n")
 }

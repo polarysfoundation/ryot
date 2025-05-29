@@ -8,6 +8,19 @@ import (
 type TokenType string
 
 const (
+	// arithmetics
+	MINUS    = "-"
+	ASTERISK = "*"
+	SLASH    = "/"
+	PLUS     = "+"
+	EQ       = "=="
+	NOT_EQ   = "!="
+	LT       = "<"
+	GT       = ">"
+	LTE      = "<="
+	GTE      = ">="
+	PERCENT  = "%"
+
 	ILLEGAL   = "ILLEGAL"
 	EOF       = "EOF"
 	IDENT     = "IDENT"
@@ -17,26 +30,36 @@ const (
 	FUNC      = "FUNC"
 	PUB       = "PUB"
 	RETURN    = "RETURN"
+	STORAGE   = "STORAGE"
+	NEW       = "NEW"
 	COLON     = ":"
 	LPAREN    = "("
 	RPAREN    = ")"
 	LBRACE    = "{"
 	RBRACE    = "}"
 	COMMA     = ","
-	PLUS      = "+"
 	SEMICOLON = ";"
 	PRAGMA    = "pragma"
 	STRING    = "STRING"
-	MINUS     = "-"
-	ASTERISK  = "*"
-	SLASH     = "/"
-	EQ        = "=="
-	NOT_EQ    = "!="
-	LT        = "<"
-	GT        = ">"
-	LTE       = "<="
-	GTE       = ">="
-	PERCENT   = "%"
+	NULL      = "NULL"
+	DELETE    = "DELETE"
+
+	// boolean
+	TRUE  = "TRUE"
+	FALSE = "FALSE"
+
+	// Types supported
+	UINT64  = "uint64"
+	UINT32  = "uint32"
+	UINT16  = "uint16"
+	UINT8   = "uint8"
+	INT64   = "int64"
+	INT32   = "int32"
+	INT16   = "int16"
+	INT8    = "int8"
+	BOOL    = "bool"
+	STRINGV = "string"
+	ADDRESS = "address"
 )
 
 type Token struct {
@@ -160,6 +183,36 @@ func isDigit(ch byte) bool {
 
 func lookupIdent(ident string) TokenType {
 	switch ident {
+	case "address":
+		return ADDRESS
+	case "uint64":
+		return UINT64
+	case "uint32":
+		return UINT32
+	case "uint16":
+		return UINT16
+	case "uint8":
+		return UINT8
+	case "int64":
+		return INT64
+	case "int32":
+		return INT32
+	case "int16":
+		return INT16
+	case "int8":
+		return INT8
+	case "bool":
+		return BOOL
+	case "string":
+		return STRINGV
+	case "new":
+		return NEW
+	case "delete":
+		return DELETE
+	case "null":
+		return NULL
+	case "st":
+		return STORAGE
 	case "pragma":
 		return PRAGMA
 	case "class":

@@ -82,13 +82,54 @@ func (p *Parser) parseClassContract(contract *ContractDecl) *ContractDecl {
 
 	for p.curToken.Type != RBRACE && p.curToken.Type != EOF {
 		if p.curToken.Type == PUB {
-			funcDecl := p.parseFuncDecl(true)
-			contract.Funcs = append(contract.Funcs, funcDecl)
+			switch p.peekToken.Type {
+			case FUNC:
+				funcDecl := p.parseFuncDecl(true)
+				contract.Funcs = append(contract.Funcs, funcDecl)
+			case STORAGE:
+				storageDecl := p.parseStorageDecl()
+				contract.Storages = append(contract.Storages, storageDecl)
+			}
+
 		}
 		p.nextToken()
 	}
 
 	return contract
+}
+
+func (p *Parser) parseStorageDecl() *StorageDecl {
+	p.expectPeek(STORAGE)
+	p.expectPeek(IDENT)
+	storageName := p.curToken.Literal
+
+	p.expectPeek(LPAREN)
+
+	var keyType *Type
+	for p.peekToken.Type != RPAREN && p.peekToken.Type != EOF {
+		p.nextToken()
+
+		keyType = p.parseTypes()
+
+		if p.peekToken.Type == COMMA {
+			p.nextToken() // skip comma
+		}
+	}
+
+	p.expectPeek(RPAREN)
+	p.expectPeek(COLON)
+
+	p.nextToken() // skip COLON
+	valueType := p.curToken.Literal
+
+	p.expectPeek(SEMICOLON)
+
+	return &StorageDecl{
+		Name:      storageName,
+		KeyType:   keyType,
+		ValueType: valueType,
+	}
+
 }
 
 func (p *Parser) parseFuncDecl(isPublic bool) *FuncDecl {
@@ -103,28 +144,41 @@ func (p *Parser) parseFuncDecl(isPublic bool) *FuncDecl {
 		p.nextToken()
 		argName := p.curToken.Literal
 		p.expectPeek(COLON)
-		p.expectPeek(IDENT)
+		p.nextToken()
 		argType := p.curToken.Literal
 		args = append(args, Argument{Name: argName, Type: argType})
 
 		if p.peekToken.Type == COMMA {
 			p.nextToken() // skip comma
+		} else if p.peekToken.Type == RPAREN {
+			break
 		}
 	}
 
 	p.expectPeek(RPAREN)
 	p.expectPeek(COLON)
-	p.expectPeek(IDENT)
-	returnType := p.curToken.Literal
 
-	p.expectPeek(LBRACE)
+	returnType := ""
+	if p.peekToken.Type != RBRACE {
+		p.nextToken()
+		returnType = p.curToken.Literal
+	}
 
 	body := []Statement{}
 	for p.peekToken.Type != RBRACE {
 		p.nextToken()
-		if p.curToken.Type == RETURN {
+		switch p.curToken.Type {
+		case RETURN:
 			stmt := p.parseReturnStatement()
 			body = append(body, stmt)
+		case NEW:
+			stmt := p.parseStorageAssign()
+			body = append(body, stmt)
+		case UINT64:
+			variables := p.parseVariables()
+			body = append(body, variables)
+		default:
+			p.errors = append(p.errors, fmt.Sprintf("unsupported statement type: %s", p.curToken.Type))
 		}
 	}
 
@@ -138,6 +192,106 @@ func (p *Parser) parseFuncDecl(isPublic bool) *FuncDecl {
 		Body:       body,
 	}
 }
+
+func (p *Parser) parseVariables() *Variable {
+	varType := p.parseTypes()
+
+	p.expectPeek(IDENT)
+	varName := p.curToken.Literal
+	p.expectPeek(COLON)
+	p.nextToken()
+
+	var value Expression
+	switch p.curToken.Type {
+	case UINT64:
+		val, _ := strconv.ParseUint(p.curToken.Literal, 10, 64)
+		value = &UInt64Literal{Value: val}
+	case IDENT:
+		varName := p.curToken.Literal
+		switch p.peekToken.Type {
+		case LPAREN:
+			p.nextToken()
+			value = &StorageAccess{
+				Var: varName,
+				Key: p.parseExpression(),
+			}
+		}
+	}
+
+	p.expectPeek(SEMICOLON)
+
+	return &Variable{
+		Type:  varType,
+		Name:  varName,
+		Value: value,
+	}
+
+}
+
+func (p *Parser) parseTypes() *Type {
+
+	switch p.curToken.Type {
+	case UINT64:
+		return &Type{Name: UINT64}
+	case STRING:
+		return &Type{Name: STRING}
+	case BOOL:
+		return &Type{Name: BOOL}
+	case ADDRESS:
+		return &Type{Name: ADDRESS}
+	case IDENT:
+		return &Type{Name: p.curToken.Type}
+	default:
+		panic(fmt.Sprintf("unsupported type: %s", p.curToken.Type))
+	}
+}
+
+func (p *Parser) parseStorageAssign() *StorageAssign {
+	p.expectPeek(IDENT)
+	variable := p.curToken.Literal
+
+	p.expectPeek(LPAREN)
+	p.expectPeek(IDENT)
+
+	keyValue := &Identifier{Name: p.curToken.Literal}
+
+	p.expectPeek(RPAREN)
+	p.expectPeek(COLON)
+
+	if p.peekToken.Type == IDENT {
+		p.nextToken()
+	}
+
+	var value Expression
+	switch p.curToken.Type {
+	case UINT64:
+		val, _ := strconv.ParseUint(p.curToken.Literal, 10, 64)
+		value = &UInt64Literal{Value: val}
+	case IDENT:
+		varName := p.curToken.Literal
+		switch p.peekToken.Type {
+		case LPAREN:
+			p.nextToken()
+			value = &StorageAccess{
+				Var: varName,
+				Key: p.parseExpression(),
+			}
+
+		default:
+			value = &Identifier{Name: varName}
+		}
+	}
+
+	p.expectPeek(SEMICOLON)
+
+	return &StorageAssign{
+		Var:   variable,
+		Key:   keyValue,
+		Value: value,
+	}
+
+}
+
 func (p *Parser) parseReturnStatement() *ReturnStatement {
 	stmt := &ReturnStatement{}
 
@@ -215,6 +369,9 @@ func (p *Parser) parseExpression() Expression {
 func (p *Parser) parsePrimary() Expression {
 	switch p.curToken.Type {
 	case IDENT:
+		if p.peekToken.Type == LPAREN {
+			return p.parseStorageAccess()
+		}
 		return &Identifier{Name: p.curToken.Literal}
 	case NUMBER:
 		val, _ := strconv.ParseUint(p.curToken.Literal, 10, 64)
@@ -228,6 +385,20 @@ func (p *Parser) parsePrimary() Expression {
 		return exp
 	default:
 		panic(fmt.Sprintf("unsupported expression type: %s", p.curToken.Type))
+	}
+}
+
+func (p *Parser) parseStorageAccess() *StorageAccess {
+	name := p.curToken.Literal
+	p.nextToken() // Skip name
+	p.expectPeek(LPAREN)
+	p.nextToken()
+	key := p.parseExpression()
+	p.expectPeek(RPAREN)
+
+	return &StorageAccess{
+		Var: name,
+		Key: key,
 	}
 }
 

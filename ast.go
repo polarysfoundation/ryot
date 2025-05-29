@@ -1,13 +1,16 @@
 package ryot
 
+import "fmt"
+
 type Program struct {
 	Contracts []*ContractDecl
 }
 
 type ContractDecl struct {
-	Version string
-	Name    string
-	Funcs   []*FuncDecl
+	Version  string
+	Name     string
+	Storages []*StorageDecl
+	Funcs    []*FuncDecl
 }
 
 type FuncDecl struct {
@@ -18,9 +21,41 @@ type FuncDecl struct {
 	Body       []Statement
 }
 
+type StorageDecl struct {
+	Name      string
+	KeyType   Expression
+	ValueType Expression
+}
+
+type Variable struct {
+	Name  string
+	Type  Expression
+	Value Expression
+}
+
 type Argument struct {
 	Name string
 	Type string
+}
+
+type StorageAssign struct {
+	Var   string
+	Key   Expression
+	Value Expression
+}
+
+type StorageDelete struct {
+	Var string
+	Key Expression
+}
+
+type StorageAccess struct {
+	Var string
+	Key Expression
+}
+
+type Type struct {
+	Name TokenType
 }
 
 type Statement interface{}
@@ -34,6 +69,21 @@ type BinaryExpr struct {
 	Right    Expression
 }
 
+type DeleteStatement struct {
+	Name string
+	Key  Expression
+}
+
 type Identifier struct{ Name string }
 
 type UInt64Literal struct{ Value uint64 }
+type StringLiteral struct{ Value string }
+type BoolLiteral struct{ Value bool }
+type NullLiteral struct{}
+type ArrayLiteral struct{ Values []Expression }
+type AddressLiteral struct{ Value string }
+type TupleLiteral struct{ Values []Expression }
+
+func (f *FuncDecl) String() string {
+	return fmt.Sprintf("func %s(%v)", f.Name, f.Args)
+}
