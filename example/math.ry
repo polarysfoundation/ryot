@@ -1,14 +1,15 @@
-pragma: "0.0.1";
-
+pragma: 1.0.0-beta;
 
 class contract Math {
 
+    // Example with parents 
     pub func add(a: uint64, b: uint64): uint64 {
         return (a + b);
     }
 
+    // Example without parents 
     pub func sub(a: uint64, b: uint64): uint64 {
-        return (a - b);
+        return a - b;
     }
 
     pub func mul(a: uint64, b: uint64): uint64 {
@@ -22,6 +23,5 @@ class contract Math {
     pub func mod(a: uint64, b: uint64): uint64 {
         return (a % b);
     }
-
 
 }
