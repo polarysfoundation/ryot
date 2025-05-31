@@ -46,17 +46,19 @@ const (
 	RBRACKET  = "]"
 
 	// Palabras clave
-	CLASS  = "CLASS"
-	STRUCT = "STRUCT"
-	ENUM   = "ENUM"
-	PRAGMA = "PRAGMA"
-	PUB    = "PUB"
-	PRIV   = "PRIV"
-	ST     = "ST"
-	FUNC   = "FUNC"
-	DELETE = "DELETE"
-	RETURN = "RETURN"
-	NEW    = "NEW"
+	CLASS     = "CLASS"
+	STRUCT    = "STRUCT"
+	ENUM      = "ENUM"
+	PRAGMA    = "PRAGMA"
+	PUB       = "PUB"
+	PRIV      = "PRIV"
+	ST        = "ST"
+	FUNC      = "FUNC"
+	DELETE    = "DELETE"
+	RETURN    = "RETURN"
+	NEW       = "NEW"
+	CONTRACT  = "CONTRACT"
+	INTERFACE = "INTERFACE"
 
 	// Types
 	UINT64  = "UINT64"
@@ -67,17 +69,19 @@ const (
 )
 
 var keywords = map[string]TokenType{
-	"class":  CLASS,
-	"struct": STRUCT,
-	"enum":   ENUM,
-	"pragma": PRAGMA,
-	"pub":    PUB,
-	"priv":   PRIV,
-	"st":     ST,
-	"func":   FUNC,
-	"delete": DELETE,
-	"return": RETURN,
-	"new":    NEW,
+	"class":     CLASS,
+	"struct":    STRUCT,
+	"enum":      ENUM,
+	"pragma":    PRAGMA,
+	"pub":       PUB,
+	"priv":      PRIV,
+	"st":        ST,
+	"func":      FUNC,
+	"delete":    DELETE,
+	"return":    RETURN,
+	"new":       NEW,
+	"contract":  CONTRACT,
+	"interface": INTERFACE,
 }
 
 func LookupIdent(ident string) TokenType {

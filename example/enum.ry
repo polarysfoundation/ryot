@@ -1,0 +1,9 @@
+pragma: "1.0.0";
+
+class contract Enum {
+    enum EnumTest: {
+        data1; 
+        data2;
+        data3;
+    }
+}
