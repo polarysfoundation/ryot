@@ -52,20 +52,22 @@ const (
 	PRAGMA    = "PRAGMA"
 	PUB       = "PUB"
 	PRIV      = "PRIV"
-	ST        = "ST"
+	STORAGE   = "STORAGE"
 	FUNC      = "FUNC"
 	DELETE    = "DELETE"
 	RETURN    = "RETURN"
 	NEW       = "NEW"
 	CONTRACT  = "CONTRACT"
 	INTERFACE = "INTERFACE"
+	VOID      = "VOID"
 
 	// Types
 	UINT64  = "UINT64"
 	ADDRESS = "ADDRESS"
 	BOOL    = "BOOL"
 	BYTE    = "BYTE"
-	TUPLE   = "TUPLE"
+	HASH    = "HASH"
+	ARRAY   = "ARRAY"
 )
 
 var keywords = map[string]TokenType{
@@ -75,13 +77,21 @@ var keywords = map[string]TokenType{
 	"pragma":    PRAGMA,
 	"pub":       PUB,
 	"priv":      PRIV,
-	"st":        ST,
+	"storage":   STORAGE,
 	"func":      FUNC,
 	"delete":    DELETE,
 	"return":    RETURN,
 	"new":       NEW,
 	"contract":  CONTRACT,
 	"interface": INTERFACE,
+	"void":      VOID,
+
+	// Types
+	"uint64":  UINT64,
+	"address": ADDRESS,
+	"bool":    BOOL,
+	"byte":    BYTE,
+	"hash":    HASH,
 }
 
 func LookupIdent(ident string) TokenType {

@@ -102,19 +102,53 @@ func (ss *StructStatement) String() string       { return "struct " + ss.Name }
 // ---------- Storage ----------
 
 type StorageDeclaration struct {
-	Token  token.Token
+	Token  token.Token // Token de tipo 'storage'
 	Public bool
 	Name   string
-	Param  string
-	Type   string
+	Params []Key
+	Value  Value
 }
 
 func (sd *StorageDeclaration) statementNode()       {}
 func (sd *StorageDeclaration) TokenLiteral() string { return sd.Token.Literal }
 func (sd *StorageDeclaration) String() string       { return sd.Name }
 
-// ---------- Función ----------
+// ---------- Keys -------------
+type Key struct {
+	Token token.Token
+	Name  string
+	Type  string
+}
 
+func (k *Key) statementNode()       {}
+func (k *Key) TokenLiteral() string { return k.Token.Literal }
+func (k *Key) String() string       { return k.Name }
+
+// ---------- Value -----------
+type Value struct {
+	Token token.Token
+	Type  string
+}
+
+func (v *Value) statementNode()       {}
+func (v *Value) TokenLiteral() string { return v.Token.Literal }
+func (v *Value) String() string       { return v.Type }
+
+// ---------- Storage ----------
+
+type StorageStatement struct {
+	Token  token.Token // Token de tipo 'storage'
+	Public bool
+	Name   string
+	Param  string
+	Value  Expression
+}
+
+func (ss *StorageStatement) statementNode()       {}
+func (ss *StorageStatement) TokenLiteral() string { return ss.Token.Literal }
+func (ss *StorageStatement) String() string       { return ss.Name }
+
+// ---------- Función ----------
 type FuncParam struct {
 	Name string
 	Type string
@@ -124,8 +158,8 @@ type FuncStatement struct {
 	Token      token.Token
 	Public     bool
 	Name       string
-	Params     []FuncParam
-	ReturnType string
+	Params     []Key
+	ReturnType Value
 	Body       []Statement
 }
 
@@ -171,29 +205,6 @@ type Identifier struct {
 func (i *Identifier) expressionNode()      {}
 func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
 func (i *Identifier) String() string       { return i.Value }
-
-// (Assuming this file defines NewStorageStatement)
-type NewStorageStatement struct {
-	Token      token.Token
-	Identifier *Identifier
-	Args       []Expression
-	Value      Expression
-}
-
-// String implements the ast.Expression interface for NewStorageStatement.
-func (nss *NewStorageStatement) String() string {
-	args := []string{}
-	for _, arg := range nss.Args {
-		args = append(args, arg.String())
-	}
-	return fmt.Sprintf("new %s(%s): %s", nss.Identifier.String(), strings.Join(args, ", "), nss.Value.String())
-}
-
-func (nss *NewStorageStatement) TokenLiteral() string {
-	return nss.Token.Literal
-}
-
-func (n *NewStorageStatement) expressionNode() {}
 
 // BinaryExpression represents a binary operation (e.g., 1 + 2)
 type BinaryExpression struct {

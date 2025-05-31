@@ -1,0 +1,12 @@
+pragma: "1.0.0";
+
+class contract Struct {
+    struct StructTest: {
+        data1: uint64;
+        data2: string;
+        data3: bool;
+        data4: address;
+        data5: hash;
+        data6: []uint64;
+    }
+}

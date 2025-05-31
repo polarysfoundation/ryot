@@ -1,0 +1,32 @@
+pragma: "1.0.0";
+
+class contract Storage {
+
+    pub storage count(id: uint64): uint64;
+
+    pub func currentCount(id: uint64): uint64 {
+        return count(id);
+    }
+
+    pub func getAndReset(id: uint64): uint64 {
+        uint64 res: count(id);
+        count(id): 0;
+        return res;
+    }
+
+    pub func deleteCount(id: uint64): void {
+        delete count(id);
+    }
+
+    pub func newCount(id: uint64): void {
+        count(id): 0;
+    }
+
+    pub func addCount(id: uint64): void {
+        _addCount(id);
+    }
+
+    priv func _addCount(id: uint64): void {
+        count(id)++;
+    }
+}
