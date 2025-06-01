@@ -19,7 +19,7 @@ class contract Storage {
     }
 
     pub func newCount(id: uint64): void {
-        count(id): 0;
+        new count(id): 0;
     }
 
     pub func addCount(id: uint64): void {

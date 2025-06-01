@@ -138,15 +138,37 @@ func (v *Value) String() string       { return v.Type }
 
 type StorageStatement struct {
 	Token  token.Token // Token de tipo 'storage'
-	Public bool
 	Name   string
-	Param  string
+	Params []Identifier
 	Value  Expression
 }
 
+func (ss *StorageStatement) expressionNode()      {}
 func (ss *StorageStatement) statementNode()       {}
 func (ss *StorageStatement) TokenLiteral() string { return ss.Token.Literal }
 func (ss *StorageStatement) String() string       { return ss.Name }
+
+type StorageAccessStatement struct {
+	Token  token.Token // Token de tipo 'storage'
+	Name   string
+	Params []Identifier
+}
+
+func (sas *StorageAccessStatement) statementNode()       {}
+func (sas *StorageAccessStatement) expressionNode()      {}
+func (sas *StorageAccessStatement) TokenLiteral() string { return sas.Token.Literal }
+func (sas *StorageAccessStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString(sas.Name)
+	out.WriteString("(")
+	params := []string{}
+	for _, p := range sas.Params {
+		params = append(params, p.String())
+	}
+	out.WriteString(strings.Join(params, ", "))
+	out.WriteString(")")
+	return out.String()
+}
 
 // ---------- Función ----------
 type FuncParam struct {
@@ -180,12 +202,13 @@ func (rs *ReturnStatement) String() string       { return "return ..." }
 
 type DeleteStatement struct {
 	Token  token.Token
-	Target Expression
+	Name   string
+	Params []Identifier
 }
 
 func (ds *DeleteStatement) statementNode()       {}
 func (ds *DeleteStatement) expressionNode()      {}
-func (ds *DeleteStatement) TokenLiteral() string { return ds.Token.Literal }
+func (ds *DeleteStatement) TokenLiteral() string { return ds.Name }
 func (ds *DeleteStatement) String() string       { return "delete ..." }
 
 type ExpressionStatement struct {
@@ -320,3 +343,61 @@ func (ae *AddressExpression) TokenLiteral() string {
 }
 
 func (ae *AddressExpression) expressionNode() {}
+
+type ByteLiteral struct {
+	Token token.Token // The token.BYTE token
+	Value uint64
+}
+
+func (bl *ByteLiteral) String() string {
+	return fmt.Sprintf("%d", bl.Value)
+}
+func (bl *ByteLiteral) TokenLiteral() string {
+	return bl.Token.Literal
+}
+
+func (bl *ByteLiteral) expressionNode() {}
+
+type NewStatement struct {
+	Token  token.Token
+	Name   string
+	Params []Identifier
+	Value  Expression
+}
+
+func (ns *NewStatement) statementNode()       {}
+func (ns *NewStatement) TokenLiteral() string { return "new" }
+func (ns *NewStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString("new ")
+	out.WriteString(ns.Name)
+	out.WriteString("(")
+	params := []string{}
+	for _, p := range ns.Params {
+		params = append(params, p.String())
+	}
+	out.WriteString(strings.Join(params, ", "))
+	out.WriteString("): ")
+	out.WriteString(ns.Value.String())
+	return out.String()
+}
+
+type ConstExpression struct {
+	Token token.Token // bool, string, uint64, address, hash, byte
+	Name  string
+	Value Expression
+}
+
+func (ce *ConstExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString(ce.Name)
+	out.WriteString(": ")
+	out.WriteString(ce.Value.String())
+	return out.String()
+}
+
+func (ce *ConstExpression) TokenLiteral() string {
+	return ce.Token.Literal
+}
+
+func (ce *ConstExpression) expressionNode() {}

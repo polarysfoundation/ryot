@@ -13,9 +13,10 @@ const (
 	EOF     = "EOF"
 
 	// Identificadores + literales
-	IDENT  = "IDENT"
-	INT    = "INT"
-	STRING = "STRING"
+	IDENT          = "IDENT"
+	INT            = "INT"
+	STRING         = "STRING"
+	STRING_LITERAL = "STRING_LITERAL"
 
 	// Operadores
 	ASSIGN   = "="
@@ -92,6 +93,7 @@ var keywords = map[string]TokenType{
 	"bool":    BOOL,
 	"byte":    BYTE,
 	"hash":    HASH,
+	"string":  STRING,
 }
 
 func LookupIdent(ident string) TokenType {

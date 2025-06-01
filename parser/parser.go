@@ -2,10 +2,15 @@ package parser
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/polarysfoundation/ryot/ast"
 	"github.com/polarysfoundation/ryot/lexer"
 	"github.com/polarysfoundation/ryot/token"
+)
+
+var (
+	debug = false
 )
 
 // Parser is the main structure for parsing tokens into an AST
@@ -89,9 +94,9 @@ func (p *Parser) parsePragma() ast.Statement {
 	p.expectPeek(token.COLON) // expect the next token to be a colon
 	p.nextToken()             // advance the parser to the next token
 
-	if p.cur.Type != token.STRING { // if the next token is not a string
-		p.peekError(token.STRING) // add an error message to the errors slice
-		return nil                // return nil
+	if p.cur.Type != token.STRING_LITERAL { // if the next token is not a string
+		p.peekError(token.STRING_LITERAL) // add an error message to the errors slice
+		return nil                        // return nil
 	}
 
 	stmt.Value = p.cur.Literal // set the Value field of the PragmaStatement node
@@ -145,6 +150,9 @@ func (p *Parser) parseClass() ast.Statement {
 		case token.STORAGE:
 			storageStmt := p.parseStorage(public)
 			stmt.Body = append(stmt.Body, storageStmt)
+		case token.FUNC:
+			funcStmt := p.parseFunc(public)
+			stmt.Body = append(stmt.Body, funcStmt)
 		}
 
 	}
@@ -230,6 +238,10 @@ func (p *Parser) parseStruct() ast.Statement {
 				field.Type = p.cur.Literal               // Set the field type to "hash"
 				p.expectPeek(token.SEMICOLON)            // Expect the next token to be a semicolon
 				stmt.Fields = append(stmt.Fields, field) // Add the field to the struct's Fields slice
+			case token.STRING: // If the current token is a STRING type
+				field.Type = p.cur.Literal
+				p.expectPeek(token.SEMICOLON)
+				stmt.Fields = append(stmt.Fields, field)
 			default: // If the current token is not a recognized type
 				p.peekError(token.IDENT) // Add an error message indicating an identifier was expected
 				return nil               // Return nil as parsing failed for this struct field
@@ -299,6 +311,12 @@ func (p *Parser) parseStorage(public bool) ast.Statement {
 				if p.peek.Type == token.COMMA {
 					p.nextToken()
 				}
+			case token.STRING:
+				key.Type = "string"
+				stmt.Params = append(stmt.Params, key) // add the parsed key to the Params slice
+				if p.peek.Type == token.COMMA {
+					p.nextToken()
+				}
 			default: // if the token is not a recognized type
 				p.peekError(token.IDENT) // record an error expecting a type identifier
 				return nil               // and return nil as parsing failed
@@ -330,4 +348,378 @@ func (p *Parser) parseStorage(public bool) ast.Statement {
 
 	return stmt // return the fully parsed StorageDeclaration node
 
+}
+
+func (p *Parser) parseFunc(public bool) ast.Statement {
+	stmt := &ast.FuncStatement{Token: p.cur}
+	p.nextToken()
+
+	stmt.Public = public
+
+	if p.cur.Type != token.IDENT {
+		p.peekError(token.IDENT)
+		return nil
+	}
+
+	stmt.Name = p.cur.Literal
+
+	fmt.Printf("========= PREPARING FUNC %s ========\n", stmt.Name)
+
+	p.expectPeek(token.LPAREN)
+
+	for p.cur.Type != token.RPAREN && p.cur.Type != token.EOF {
+		p.nextToken()
+
+		if p.cur.Type == token.IDENT {
+			key := ast.Key{Token: p.cur}
+			key.Name = p.cur.Literal
+
+			p.expectPeek(token.COLON)
+			p.nextToken()
+
+			switch p.cur.Type {
+			case token.UINT64:
+				key.Type = "uint64"
+				stmt.Params = append(stmt.Params, key)
+				if p.peek.Type == token.COMMA {
+					p.nextToken()
+				}
+			case token.ADDRESS:
+				key.Type = "address"
+				stmt.Params = append(stmt.Params, key)
+				if p.peek.Type == token.COMMA {
+					p.nextToken()
+				}
+			case token.BOOL:
+				key.Type = "bool"
+				stmt.Params = append(stmt.Params, key)
+				if p.peek.Type == token.COMMA {
+					p.nextToken()
+				}
+			case token.BYTE:
+				key.Type = "byte"
+				stmt.Params = append(stmt.Params, key)
+				if p.peek.Type == token.COMMA {
+					p.nextToken()
+				}
+			case token.HASH:
+				key.Type = "hash"
+				stmt.Params = append(stmt.Params, key)
+				if p.peek.Type == token.COMMA {
+					p.nextToken()
+				}
+			case token.STRING:
+				key.Type = "string"
+				stmt.Params = append(stmt.Params, key)
+				if p.peek.Type == token.COMMA {
+					p.nextToken()
+				}
+			default:
+				p.peekError(token.IDENT)
+				return nil
+			}
+		}
+	}
+
+	p.expectPeek(token.COLON)
+	p.nextToken()
+
+	switch p.cur.Type {
+	case token.UINT64:
+		stmt.ReturnType.Token = p.cur
+		stmt.ReturnType.Type = "uint64"
+	case token.ADDRESS:
+		stmt.ReturnType.Token = p.cur
+		stmt.ReturnType.Type = "address"
+	case token.BOOL:
+		stmt.ReturnType.Token = p.cur
+		stmt.ReturnType.Type = "bool"
+	case token.BYTE:
+		stmt.ReturnType.Token = p.cur
+		stmt.ReturnType.Type = "byte"
+	case token.HASH:
+		stmt.ReturnType.Token = p.cur
+		stmt.ReturnType.Type = "hash"
+	case token.VOID:
+		stmt.ReturnType.Token = p.cur
+		stmt.ReturnType.Type = "void"
+	case token.STRING:
+		stmt.ReturnType.Token = p.cur
+		stmt.ReturnType.Type = "string"
+	default:
+		p.peekError(token.IDENT)
+		return nil
+	}
+
+	p.expectPeek(token.LBRACE)
+
+	if debug {
+		fmt.Println(p.cur.Type)
+		fmt.Println(p.cur.Literal)
+	}
+
+	stmt.Body = []ast.Statement{}
+	for p.cur.Type != token.RBRACE && p.cur.Type != token.EOF {
+		p.nextToken()
+
+		switch p.cur.Type {
+		case token.RETURN:
+			stmt.Body = append(stmt.Body, p.parseReturn())
+		case token.NEW:
+			stmt.Body = append(stmt.Body, p.parseNew())
+		case token.DELETE:
+			stmt.Body = append(stmt.Body, p.parseDelete())
+		default:
+			stmt.Body = append(stmt.Body, p.parseExpressionStatement())
+		}
+	}
+
+	p.nextToken()
+
+	fmt.Printf("========= FUNC DONE %s ========\n", stmt.Name)
+
+	return stmt
+}
+
+func (p *Parser) parseExpressionStatement() ast.Statement {
+	stmt := &ast.ExpressionStatement{Token: p.cur}
+	expr := p.parseExpression()
+	fmt.Println(expr)
+	stmt.Expression = expr
+	return stmt
+}
+
+func (p *Parser) parseDelete() ast.Statement {
+	fmt.Printf("Parsing delete statement: %s \n", p.cur.Literal)
+
+	stmt := &ast.DeleteStatement{Token: p.cur}
+	p.nextToken()
+
+	if p.cur.Type != token.IDENT {
+		p.peekError(token.IDENT)
+		return nil
+	}
+
+	stmt.Name = p.cur.Literal
+
+	p.expectPeek(token.LPAREN)
+
+	p.nextToken()
+
+	for p.cur.Type != token.RPAREN && p.cur.Type != token.EOF {
+		if p.cur.Type == token.IDENT {
+			stmt.Params = append(stmt.Params, ast.Identifier{Token: p.cur, Value: p.cur.Literal})
+			p.nextToken()
+		}
+	}
+
+	p.expectPeek(token.SEMICOLON)
+	if p.peek.Type == token.RBRACE {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseNew() ast.Statement {
+	fmt.Printf("Parsing new statement: %s \n", p.cur.Literal)
+
+	stmt := &ast.NewStatement{Token: p.cur}
+	p.nextToken()
+
+	if p.cur.Type != token.IDENT {
+		p.peekError(token.IDENT)
+		return nil
+	}
+
+	stmt.Name = p.cur.Literal
+
+	if !p.expectPeek(token.LPAREN) {
+		p.peekError(token.LPAREN)
+		return nil
+	}
+
+	p.nextToken()
+
+	for p.cur.Type != token.RPAREN && p.cur.Type != token.EOF {
+		if p.cur.Type == token.IDENT {
+			stmt.Params = append(stmt.Params, ast.Identifier{Token: p.cur, Value: p.cur.Literal})
+			p.nextToken()
+		}
+	}
+
+	p.expectPeek(token.COLON)
+	p.nextToken()
+
+	stmt.Value = p.parseExpression()
+
+	return stmt
+
+}
+
+func (p *Parser) parseReturn() ast.Statement {
+	stmt := &ast.ReturnStatement{Token: p.cur}
+	p.nextToken()
+
+	fmt.Printf("Parsing return statement: %s \n", p.cur.Literal)
+
+	stmt.Value = p.parseExpression()
+
+	return stmt
+}
+
+func (p *Parser) parseExpression() ast.Expression {
+	fmt.Printf("Parsing expresion: %s \n", p.cur.Literal)
+
+	var left ast.Expression
+	switch p.cur.Type {
+	case token.IDENT:
+		if p.peek.Type != token.LPAREN {
+			left = p.parseIdentifier()
+		} else {
+			left = p.parseStorageStatement()
+		}
+	case token.LPAREN:
+		p.nextToken()
+		return p.parseExpression()
+	case token.INT:
+		return p.parseIntegerLiteral()
+	case token.UINT64:
+		return p.parseConstExpression()
+	case token.STRING_LITERAL:
+		
+	}
+
+	fmt.Println(p.cur.Type)
+	fmt.Println(p.cur.Literal)
+
+	if p.peek.Type != token.SEMICOLON {
+
+		p.nextToken()
+		switch p.cur.Type {
+		case token.PLUS:
+			return p.parseBinaryExpression(left)
+		case token.MINUS:
+			return p.parseBinaryExpression(left)
+		case token.ASTERISK:
+			return p.parseBinaryExpression(left)
+		case token.SLASH:
+			return p.parseBinaryExpression(left)
+		case token.LT:
+			return p.parseBinaryExpression(left)
+		case token.GT:
+			return p.parseBinaryExpression(left)
+		case token.EQ:
+			return p.parseBinaryExpression(left)
+		case token.NOT_EQ:
+			return p.parseBinaryExpression(left)
+		case token.LTE:
+			return p.parseBinaryExpression(left)
+		case token.GTE:
+			return p.parseBinaryExpression(left)
+		}
+	}
+
+	return left
+}
+
+func (p *Parser) parseConstExpression() ast.Expression {
+	fmt.Printf("Parsing const expression: %s \n", p.cur.Literal)
+
+	stmt := &ast.ConstExpression{Token: p.cur}
+	p.nextToken()
+
+	if p.cur.Type != token.IDENT {
+		p.peekError(token.IDENT)
+		return nil
+	}
+
+	stmt.Name = p.cur.Literal
+
+	fmt.Println(p.cur.Literal)
+
+	if !p.expectPeek(token.COLON) {
+		p.peekError(token.COLON)
+		return nil
+	}
+
+	p.nextToken()
+
+	stmt.Value = p.parseExpression()
+
+	if p.peek.Type != token.SEMICOLON {
+		p.peekError(token.SEMICOLON)
+		return nil
+	}
+
+	p.nextToken()
+
+	return stmt
+
+}
+
+func (p *Parser) parseStorageStatement() ast.Expression {
+	fmt.Printf("Parsing storage statement: %s \n", p.cur.Literal)
+
+	stmt := &ast.StorageStatement{Token: token.Token{Type: token.STORAGE, Literal: "storage"}}
+
+	if p.cur.Type != token.IDENT {
+		p.peekError(token.IDENT)
+		return nil
+	}
+
+	stmt.Name = p.cur.Literal
+
+	p.expectPeek(token.LPAREN)
+
+	for p.cur.Type != token.RPAREN && p.cur.Type != token.EOF {
+		p.nextToken()
+
+		if p.cur.Type == token.IDENT {
+			param := ast.Identifier{Token: p.cur, Value: p.cur.Literal}
+			stmt.Params = append(stmt.Params, param)
+			if p.peek.Type == token.COMMA {
+				p.nextToken()
+			}
+		}
+	}
+
+	if !p.expectPeek(token.COLON) {
+		fmt.Printf("Parsing storage access statement: %s \n", p.cur.Literal)
+		access_storage := &ast.StorageAccessStatement{Token: token.Token{Type: token.STORAGE, Literal: "storage"}}
+		access_storage.Name = stmt.Name
+		access_storage.Params = stmt.Params
+
+		return access_storage
+	}
+	p.nextToken()
+
+	stmt.Value = p.parseExpression()
+
+	return stmt
+}
+
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	stmt := &ast.IntegerLiteral{Token: p.cur}
+	value, _ := strconv.ParseInt(p.cur.Literal, 10, 64) // parse the literal value as an integer
+	stmt.Value = uint64(value)
+	return stmt
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	fmt.Printf("Parsing identifier: %s \n", p.cur.Literal)
+	return &ast.Identifier{Token: p.cur, Value: p.cur.Literal}
+}
+
+func (p *Parser) parseBinaryExpression(left ast.Expression) ast.Expression {
+	fmt.Printf("Parsing binary expression: %s \n", p.cur.Literal)
+
+	expr := &ast.BinaryExpression{
+		Token:    p.cur,
+		Operator: p.cur.Literal,
+		Left:     left,
+	}
+	p.nextToken()
+	expr.Right = p.parseExpression()
+	return expr
 }
