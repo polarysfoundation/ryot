@@ -94,6 +94,18 @@ var keywords = map[string]TokenType{
 	"byte":    BYTE,
 	"hash":    HASH,
 	"string":  STRING,
+	"array":   ARRAY,
+	"true":    BOOL,
+	"false":   BOOL,
+	"null":    VOID,
+}
+
+func (t TokenType) String() string {
+	return string(t)
+}
+
+func (t Token) String() string {
+	return "Token(" + t.Type.String() + ", " + t.Literal + ")"
 }
 
 func LookupIdent(ident string) TokenType {

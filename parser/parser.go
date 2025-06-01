@@ -414,6 +414,14 @@ func (p *Parser) parseFunc(public bool) ast.Statement {
 				if p.peek.Type == token.COMMA {
 					p.nextToken()
 				}
+			case token.LBRACKET:
+				p.expectPeek(token.RBRACKET)
+				p.nextToken()
+				key.Type = fmt.Sprintf("[]%s", p.cur.Literal)
+				stmt.Params = append(stmt.Params, key)
+				if p.peek.Type == token.COMMA {
+					p.nextToken()
+				}
 			default:
 				p.peekError(token.IDENT)
 				return nil
@@ -446,6 +454,11 @@ func (p *Parser) parseFunc(public bool) ast.Statement {
 	case token.STRING:
 		stmt.ReturnType.Token = p.cur
 		stmt.ReturnType.Type = "string"
+	case token.LBRACKET:
+		p.expectPeek(token.RBRACKET)
+		p.nextToken()
+		stmt.ReturnType.Token = token.Token{Type: token.ARRAY, Literal: "array"}
+		stmt.ReturnType.Type = fmt.Sprintf("[]%s", p.cur.Literal)
 	default:
 		p.peekError(token.IDENT)
 		return nil
@@ -589,11 +602,11 @@ func (p *Parser) parseExpression() ast.Expression {
 	case token.STRING_LITERAL:
 		fmt.Printf("Parsing string literal: %s \n", p.cur.Literal)
 		left = p.parseStringLiteral()
-
+	case token.LBRACKET:
+		left = p.parseArrayLiteral()
 	}
 
 	if p.peek.Type != token.SEMICOLON {
-
 		p.nextToken()
 		switch p.cur.Type {
 		case token.PLUS:
@@ -620,6 +633,19 @@ func (p *Parser) parseExpression() ast.Expression {
 	}
 
 	return left
+}
+
+func (p *Parser) parseArrayLiteral() ast.Expression {
+	stmt := &ast.ArrayLiteral{Token: token.Token{Type: token.ARRAY, Literal: "array"}}
+	p.nextToken()
+	for p.cur.Type != token.RBRACKET && p.cur.Type != token.EOF {
+		stmt.Elements = append(stmt.Elements, p.parseExpression())
+		if p.peek.Type == token.COMMA {
+			p.nextToken()
+		}
+		p.nextToken()
+	}
+	return stmt
 }
 
 func (p *Parser) parseStringLiteral() ast.Expression {

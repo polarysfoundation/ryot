@@ -147,6 +147,11 @@ func TestParse_FuncWithReturn(t *testing.T) {
 			priv func _name(): string {
 				return "test";
 			}
+
+			pub func uint64Array(): []uint64{
+				return [1, 2, 3];
+			}
+
 	}
 	`
 	l := lexer.New(input)
@@ -162,4 +167,5 @@ func TestParse_FuncWithReturn(t *testing.T) {
 	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[1].(*ast.FuncStatement).Body[0].(*ast.ReturnStatement).Value)
 	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[2].(*ast.FuncStatement).Body[0].(*ast.ReturnStatement).Value)
 	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[3].(*ast.FuncStatement).Body[0].(*ast.ReturnStatement).Value)
+	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[4].(*ast.FuncStatement).Body[0].(*ast.ReturnStatement).Value)
 }

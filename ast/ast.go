@@ -401,3 +401,26 @@ func (ce *ConstExpression) TokenLiteral() string {
 }
 
 func (ce *ConstExpression) expressionNode() {}
+
+type ArrayLiteral struct {
+	Token    token.Token // The '[' token
+	Elements []Expression
+}
+
+func (al *ArrayLiteral) String() string {
+	var out bytes.Buffer
+	elements := []string{}
+	for _, el := range al.Elements {
+		elements = append(elements, el.String())
+	}
+	out.WriteString("[")
+	out.WriteString(strings.Join(elements, ", "))
+	out.WriteString("]")
+	return out.String()
+}
+
+func (al *ArrayLiteral) TokenLiteral() string {
+	return al.Token.Literal
+}
+
+func (al *ArrayLiteral) expressionNode() {}
