@@ -587,11 +587,10 @@ func (p *Parser) parseExpression() ast.Expression {
 	case token.UINT64:
 		return p.parseConstExpression()
 	case token.STRING_LITERAL:
-		
-	}
+		fmt.Printf("Parsing string literal: %s \n", p.cur.Literal)
+		left = p.parseStringLiteral()
 
-	fmt.Println(p.cur.Type)
-	fmt.Println(p.cur.Literal)
+	}
 
 	if p.peek.Type != token.SEMICOLON {
 
@@ -621,6 +620,13 @@ func (p *Parser) parseExpression() ast.Expression {
 	}
 
 	return left
+}
+
+func (p *Parser) parseStringLiteral() ast.Expression {
+	stmt := &ast.StringLiteral{Token: p.cur}
+	stmt.Value = p.cur.Literal
+	p.nextToken()
+	return stmt
 }
 
 func (p *Parser) parseConstExpression() ast.Expression {
