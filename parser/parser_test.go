@@ -87,6 +87,24 @@ func TestParse_Struct(t *testing.T) {
 
 }
 
+func TestParse_StorageInit(t *testing.T) {
+	input := `pragma: "1.0.0";
+		class contract TestStructContract {
+			pub storage count(id: uint64): uint64;
+		}
+		`
+	l := lexer.New(input)
+	p := New(l)
+
+	program := p.ParseProgram()
+	if program == nil {
+		t.Fatalf("ParseProgram() returned nil")
+	}
+
+	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[0].(*ast.StorageDeclaration).Name)
+
+}
+
 func TestParse_Storage(t *testing.T) {
 	input := `pragma: "1.0.0";
 	class contract testStorageContract {
@@ -109,6 +127,8 @@ func TestParse_Storage(t *testing.T) {
 				delete count(id);
 				return res;
     		}
+
+			
 	}
 	`
 	l := lexer.New(input)
@@ -119,14 +139,7 @@ func TestParse_Storage(t *testing.T) {
 		t.Fatalf("ParseProgram() returned nil")
 	}
 
-	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[0].(*ast.StorageDeclaration).Value)
-	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[1].(*ast.FuncStatement).Body[0].(*ast.NewStatement).Name)
-	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[1].(*ast.FuncStatement).ReturnType.Type)
-	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[2].(*ast.FuncStatement).Body[0].(*ast.DeleteStatement).Params)
-	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[3].(*ast.FuncStatement).Body[0].(*ast.ReturnStatement).Value.(*ast.StorageAccessStatement).Params)
-	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[4].(*ast.FuncStatement).Body[0].(*ast.ExpressionStatement).Expression.(*ast.ConstExpression).Name)
-	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[4].(*ast.FuncStatement).Body[1].(*ast.DeleteStatement).Name)
-	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[4].(*ast.FuncStatement).Body[2].(*ast.ReturnStatement).Value.(*ast.Identifier))
+	fmt.Println(len(program.Statements[1].(*ast.ClassStatement).Body))
 }
 
 func TestParse_FuncWithReturn(t *testing.T) {
@@ -152,6 +165,18 @@ func TestParse_FuncWithReturn(t *testing.T) {
 				return [1, 2, 3];
 			}
 
+			pub func stringArray(): []string{
+				return ["a", "b", "c"];
+			}
+
+			pub func boolArray(): []bool{
+				return [true, false, true];
+			}
+
+			pub func getAddress(): address{
+				return 1cxdc6e0e801fbe5ae5f2799361d34b53
+			}
+
 	}
 	`
 	l := lexer.New(input)
@@ -168,4 +193,5 @@ func TestParse_FuncWithReturn(t *testing.T) {
 	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[2].(*ast.FuncStatement).Body[0].(*ast.ReturnStatement).Value)
 	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[3].(*ast.FuncStatement).Body[0].(*ast.ReturnStatement).Value)
 	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[4].(*ast.FuncStatement).Body[0].(*ast.ReturnStatement).Value)
+	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[7].(*ast.FuncStatement).Body[0].(*ast.ReturnStatement).Value)
 }

@@ -9,10 +9,6 @@ import (
 	"github.com/polarysfoundation/ryot/token"
 )
 
-var (
-	debug = false
-)
-
 // Parser is the main structure for parsing tokens into an AST
 type Parser struct {
 	l      *lexer.Lexer
@@ -101,8 +97,12 @@ func (p *Parser) parsePragma() ast.Statement {
 
 	stmt.Value = p.cur.Literal // set the Value field of the PragmaStatement node
 
-	p.expectPeek(token.SEMICOLON) // expect the next token to be a semicolon
-	p.nextToken()                 // advance the parser to the next token
+	if !p.expectPeek(token.SEMICOLON) {
+		p.peekError(token.SEMICOLON)
+		return nil
+	}
+
+	p.nextToken() // advance the parser to the next token
 
 	return stmt // return the PragmaStatement node
 }
@@ -128,10 +128,13 @@ func (p *Parser) parseClass() ast.Statement {
 	}
 	stmt.Name = p.cur.Literal // set the Name field of the ClassStatement node
 
-	p.expectPeek(token.LBRACE) // expect the next token to be a left brace
+	if !p.expectPeek(token.LBRACE) {
+		p.peekError(token.LBRACE)
+		return nil
+	}
 
-	stmt.Body = []ast.Statement{}                               // initialize the Body slice
-	for p.cur.Type != token.RBRACE && p.cur.Type != token.EOF { // loop until the end of the class
+	stmt.Body = []ast.Statement{}                                 // initialize the Body slice
+	for p.peek.Type != token.RBRACE && p.peek.Type != token.EOF { // loop until the end of the class
 		p.nextToken() // advance the parser to the next token
 
 		public := false
@@ -173,13 +176,19 @@ func (p *Parser) parseEnum() ast.Statement {
 
 	p.nextToken() // skip to COLON
 
-	p.expectPeek(token.LBRACE) // expect the next token to be a left brace
+	if !p.expectPeek(token.LBRACE) {
+		p.peekError(token.LBRACE)
+		return nil
+	}
 
-	for p.cur.Type != token.RBRACE && p.cur.Type != token.EOF { // loop until the end of the enum
+	for p.peek.Type != token.RBRACE && p.peek.Type != token.EOF { // loop until the end of the enum
 		p.nextToken() // advance the parser to the next token
 		if p.cur.Type == token.IDENT {
 			stmt.Values = append(stmt.Values, p.cur.Literal) // add the identifier to the Values slice of the EnumStatement node
-			p.expectPeek(token.SEMICOLON)                    // expect the next token to be a semicolon
+			if !p.expectPeek(token.SEMICOLON) {
+				p.peekError(token.SEMICOLON)
+				return nil
+			}
 		}
 	}
 
@@ -201,47 +210,81 @@ func (p *Parser) parseStruct() ast.Statement {
 	stmt.Name = p.cur.Literal // set the Name field of the StructStatement node
 	p.nextToken()             // advance the parser to the next token
 
-	p.expectPeek(token.LBRACE) // expect the next token to be a left brace
+	if !p.expectPeek(token.LBRACE) {
+		p.peekError(token.LBRACE)
+		return nil
+	}
 
-	for p.cur.Type != token.RBRACE && p.cur.Type != token.EOF { // loop until the end of the struct
+	for p.peek.Type != token.RBRACE && p.peek.Type != token.EOF { // loop until the end of the struct
 		p.nextToken() // advance the parser to the next token
 
 		if p.cur.Type == token.IDENT {
 			field := ast.StructField{Name: p.cur.Literal} // create a new StructField node
-			p.expectPeek(token.COLON)                     // expect the next token to be a colon
-			p.nextToken()                                 // advance the parser to the next token
+
+			if !p.expectPeek(token.COLON) {
+				p.peekError(token.COLON)
+				return nil
+			}
+
+			p.nextToken() // advance the parser to the next token
 
 			switch p.cur.Type {
 			case token.IDENT: // If the current token is an identifier (e.g. a custom type name)
 				field.Type = p.cur.Literal               // Set the field type to the literal value of the token
-				p.expectPeek(token.SEMICOLON)            // Expect the next token to be a semicolon
 				stmt.Fields = append(stmt.Fields, field) // Add the field to the struct's Fields slice
+				if !p.expectPeek(token.SEMICOLON) {
+					p.peekError(token.SEMICOLON)
+					return nil
+				}
 			case token.UINT64: // If the current token is a UINT64 type
 				field.Type = p.cur.Literal               // Set the field type to "uint64"
-				p.expectPeek(token.SEMICOLON)            // Expect the next token to be a semicolon
 				stmt.Fields = append(stmt.Fields, field) // Add the field to the struct's Fields slice
+				if !p.expectPeek(token.SEMICOLON) {
+					p.peekError(token.SEMICOLON)
+					return nil
+				}
 			case token.ADDRESS: // If the current token is an ADDRESS type
 				field.Type = p.cur.Literal               // Set the field type to "address"
-				p.expectPeek(token.SEMICOLON)            // Expect the next token to be a semicolon
 				stmt.Fields = append(stmt.Fields, field) // Add the field to the struct's Fields slice
+				if !p.expectPeek(token.SEMICOLON) {
+					p.peekError(token.SEMICOLON)
+					return nil
+				}
 			case token.BOOL: // If the current token is a BOOL type
 				field.Type = p.cur.Literal               // Set the field type to "bool"
-				p.expectPeek(token.SEMICOLON)            // Expect the next token to be a semicolon
 				stmt.Fields = append(stmt.Fields, field) // Add the field to the struct's Fields slice
+				if !p.expectPeek(token.SEMICOLON) {
+					p.peekError(token.SEMICOLON)
+					return nil
+				}
 			case token.LBRACKET: // If the current token is a left bracket (indicating an array type)
-				p.expectPeek(token.RBRACKET)                    // Expect the next token to be a right bracket
+				// Expect the next token to be a right bracket
+				if !p.expectPeek(token.RBRACKET) {
+					p.peekError(token.RBRACKET)
+					return nil
+				}
+
 				p.nextToken()                                   // Advance the parser to the token after the right bracket (which should be the array element type)
 				field.Type = fmt.Sprintf("[]%s", p.cur.Literal) // Set the field type to "[]<element_type>"
 				stmt.Fields = append(stmt.Fields, field)        // Add the field to the struct's Fields slice
-				p.expectPeek(token.SEMICOLON)                   // Expect the next token to be a semicolon
+				if !p.expectPeek(token.SEMICOLON) {
+					p.peekError(token.SEMICOLON)
+					return nil
+				}
 			case token.HASH: // If the current token is a HASH type
 				field.Type = p.cur.Literal               // Set the field type to "hash"
-				p.expectPeek(token.SEMICOLON)            // Expect the next token to be a semicolon
 				stmt.Fields = append(stmt.Fields, field) // Add the field to the struct's Fields slice
+				if !p.expectPeek(token.SEMICOLON) {
+					p.peekError(token.SEMICOLON)
+					return nil
+				}
 			case token.STRING: // If the current token is a STRING type
 				field.Type = p.cur.Literal
-				p.expectPeek(token.SEMICOLON)
 				stmt.Fields = append(stmt.Fields, field)
+				if !p.expectPeek(token.SEMICOLON) {
+					p.peekError(token.SEMICOLON)
+					return nil
+				}
 			default: // If the current token is not a recognized type
 				p.peekError(token.IDENT) // Add an error message indicating an identifier was expected
 				return nil               // Return nil as parsing failed for this struct field
@@ -249,7 +292,7 @@ func (p *Parser) parseStruct() ast.Statement {
 		}
 	}
 
-	p.nextToken() // advance the parser to the next token
+	p.nextToken()
 
 	return stmt // return the StructStatement node
 
@@ -257,6 +300,8 @@ func (p *Parser) parseStruct() ast.Statement {
 
 // parseStorage parses a Storage statement and returns an AST StorageDeclaration node
 func (p *Parser) parseStorage(public bool) ast.Statement {
+	fmt.Printf("========= PREPARING STORAGE %s ========\n", p.cur.Literal)
+
 	stmt := &ast.StorageDeclaration{Token: p.cur} // create a new StorageDeclaration node, storing the current token (e.g., 'storage')
 	p.nextToken()                                 // advance to the next token (should be the storage name)
 
@@ -268,16 +313,23 @@ func (p *Parser) parseStorage(public bool) ast.Statement {
 	}
 	stmt.Name = p.cur.Literal // set the Name field of the StorageDeclaration node
 
-	p.expectPeek(token.LPAREN) // expect the next token to be a left parenthesis '(' for parameters
+	if !p.expectPeek(token.LPAREN) {
+		p.peekError(token.LPAREN)
+		return nil
+	}
 
-	stmt.Params = []ast.Key{}                                   // initialize the Params slice
-	for p.cur.Type != token.RPAREN && p.cur.Type != token.EOF { // loop until a right parenthesis ')' or EOF is encountered
+	stmt.Params = []ast.Key{}                                     // initialize the Params slice
+	for p.peek.Type != token.RPAREN && p.peek.Type != token.EOF { // loop until a right parenthesis ')' or EOF is encountered
 		p.nextToken()                  // advance past the left parenthesis
 		if p.cur.Type == token.IDENT { // if the current token is an identifier (parameter name)
 			key := ast.Key{Token: p.cur} // create a new Key node
 			key.Name = p.cur.Literal     // set the parameter name
 
-			p.expectPeek(token.COLON) // expect the next token to be a colon ':' separating name and type
+			if !p.expectPeek(token.COLON) {
+				p.peekError(token.COLON)
+				return nil
+			}
+
 			p.nextToken()
 
 			switch p.cur.Type { // determine the parameter type based on the current token
@@ -324,8 +376,14 @@ func (p *Parser) parseStorage(public bool) ast.Statement {
 		}
 	}
 
-	p.expectPeek(token.COLON) // expect the next token to be a colon ':' separating parameters and value type
-	p.nextToken()             // advance past the colon to the value type
+	p.nextToken()
+
+	if !p.expectPeek(token.COLON) {
+		p.peekError(token.COLON)
+		return nil
+	}
+
+	p.nextToken() // advance past the colon to the value type
 
 	stmt.Value = ast.Value{Token: p.cur} // create a new Value node for the storage value type
 	switch p.cur.Type {                  // determine the value type based on the current token
@@ -344,7 +402,10 @@ func (p *Parser) parseStorage(public bool) ast.Statement {
 		return nil               // and return nil as parsing failed
 	}
 
-	p.nextToken() // advance past the value type token
+	if !p.expectPeek(token.SEMICOLON) {
+		p.peekError(token.SEMICOLON)
+		return nil
+	}
 
 	return stmt // return the fully parsed StorageDeclaration node
 
@@ -356,7 +417,7 @@ func (p *Parser) parseFunc(public bool) ast.Statement {
 
 	stmt.Public = public
 
-	if p.cur.Type != token.IDENT {
+	if p.cur.Type != token.IDENT && p.peek.Type != token.LPAREN {
 		p.peekError(token.IDENT)
 		return nil
 	}
@@ -365,16 +426,23 @@ func (p *Parser) parseFunc(public bool) ast.Statement {
 
 	fmt.Printf("========= PREPARING FUNC %s ========\n", stmt.Name)
 
-	p.expectPeek(token.LPAREN)
+	if !p.expectPeek(token.LPAREN) {
+		p.peekError(token.LPAREN)
+		return nil
+	}
 
-	for p.cur.Type != token.RPAREN && p.cur.Type != token.EOF {
+	for p.peek.Type != token.RPAREN && p.peek.Type != token.EOF {
 		p.nextToken()
 
 		if p.cur.Type == token.IDENT {
 			key := ast.Key{Token: p.cur}
 			key.Name = p.cur.Literal
 
-			p.expectPeek(token.COLON)
+			if !p.expectPeek(token.COLON) {
+				p.peekError(token.COLON)
+				return nil
+			}
+
 			p.nextToken()
 
 			switch p.cur.Type {
@@ -429,7 +497,13 @@ func (p *Parser) parseFunc(public bool) ast.Statement {
 		}
 	}
 
-	p.expectPeek(token.COLON)
+	p.nextToken()
+
+	if !p.expectPeek(token.COLON) {
+		p.peekError(token.COLON)
+		return nil
+	}
+
 	p.nextToken()
 
 	switch p.cur.Type {
@@ -464,15 +538,13 @@ func (p *Parser) parseFunc(public bool) ast.Statement {
 		return nil
 	}
 
-	p.expectPeek(token.LBRACE)
-
-	if debug {
-		fmt.Println(p.cur.Type)
-		fmt.Println(p.cur.Literal)
+	if !p.expectPeek(token.LBRACE) {
+		p.peekError(token.LBRACE)
+		return nil
 	}
 
 	stmt.Body = []ast.Statement{}
-	for p.cur.Type != token.RBRACE && p.cur.Type != token.EOF {
+	for p.peek.Type != token.RBRACE && p.peek.Type != token.EOF {
 		p.nextToken()
 
 		switch p.cur.Type {
@@ -515,20 +587,26 @@ func (p *Parser) parseDelete() ast.Statement {
 
 	stmt.Name = p.cur.Literal
 
-	p.expectPeek(token.LPAREN)
+	if !p.expectPeek(token.LPAREN) {
+		p.peekError(token.LPAREN)
+		return nil
+	}
 
-	p.nextToken()
-
-	for p.cur.Type != token.RPAREN && p.cur.Type != token.EOF {
+	for p.peek.Type != token.RPAREN && p.peek.Type != token.EOF {
+		p.nextToken()
 		if p.cur.Type == token.IDENT {
 			stmt.Params = append(stmt.Params, ast.Identifier{Token: p.cur, Value: p.cur.Literal})
-			p.nextToken()
+			if p.peek.Type == token.COMMA {
+				p.nextToken()
+			}
 		}
 	}
 
-	p.expectPeek(token.SEMICOLON)
-	if p.peek.Type == token.RBRACE {
-		p.nextToken()
+	p.nextToken()
+
+	if !p.expectPeek(token.SEMICOLON) {
+		p.peekError(token.SEMICOLON)
+		return nil
 	}
 
 	return stmt
@@ -557,6 +635,9 @@ func (p *Parser) parseNew() ast.Statement {
 	for p.cur.Type != token.RPAREN && p.cur.Type != token.EOF {
 		if p.cur.Type == token.IDENT {
 			stmt.Params = append(stmt.Params, ast.Identifier{Token: p.cur, Value: p.cur.Literal})
+			if p.peek.Type == token.COMMA {
+				p.nextToken()
+			}
 			p.nextToken()
 		}
 	}
@@ -594,19 +675,37 @@ func (p *Parser) parseExpression() ast.Expression {
 		}
 	case token.LPAREN:
 		p.nextToken()
-		return p.parseExpression()
+		left = p.parseExpression()
 	case token.INT:
-		return p.parseIntegerLiteral()
+		fmt.Printf("Parsing integer literal: %s \n", p.cur.Literal)
+		left = p.parseIntegerLiteral()
 	case token.UINT64:
-		return p.parseConstExpression()
+		left = p.parseConstExpression()
 	case token.STRING_LITERAL:
 		fmt.Printf("Parsing string literal: %s \n", p.cur.Literal)
 		left = p.parseStringLiteral()
+	case token.BOOL_LITERAL:
+		fmt.Printf("Parsing bool literal: %s \n", p.cur.Literal)
+		left = p.parseBoolLiteral()
+
 	case token.LBRACKET:
 		left = p.parseArrayLiteral()
+	case token.ADDRESS:
+		left = p.parseConstExpression()
+	case token.BOOL:
+		left = p.parseConstExpression()
+	case token.BYTE:
+		left = p.parseConstExpression()
+	case token.HASH:
+		left = p.parseConstExpression()
+	case token.STRING:
+		left = p.parseConstExpression()
+	case token.ADDRESS_LITERAL:
+		left = p.parseAddressLiteral()
+
 	}
 
-	if p.peek.Type != token.SEMICOLON {
+	if p.cur.Type != token.SEMICOLON {
 		p.nextToken()
 		switch p.cur.Type {
 		case token.PLUS:
@@ -636,14 +735,53 @@ func (p *Parser) parseExpression() ast.Expression {
 }
 
 func (p *Parser) parseArrayLiteral() ast.Expression {
+	fmt.Printf("Parsing array literal: %s \n", p.cur.Literal)
+
 	stmt := &ast.ArrayLiteral{Token: token.Token{Type: token.ARRAY, Literal: "array"}}
-	p.nextToken()
-	for p.cur.Type != token.RBRACKET && p.cur.Type != token.EOF {
-		stmt.Elements = append(stmt.Elements, p.parseExpression())
-		if p.peek.Type == token.COMMA {
-			p.nextToken()
-		}
+
+	stmt.Elements = []ast.Expression{}
+	for p.peek.Type != token.RBRACKET && p.peek.Type != token.EOF {
 		p.nextToken()
+
+		switch p.cur.Type {
+		case token.IDENT:
+			stmt.Elements = append(stmt.Elements, p.parseIdentifier())
+		case token.INT:
+			stmt.Elements = append(stmt.Elements, p.parseIntegerLiteral())
+		case token.UINT64:
+			stmt.Elements = append(stmt.Elements, p.parseConstExpression())
+		case token.STRING_LITERAL:
+			stmt.Elements = append(stmt.Elements, p.parseStringLiteral())
+		case token.BOOL_LITERAL:
+			stmt.Elements = append(stmt.Elements, p.parseBoolLiteral())
+		case token.LBRACKET:
+			stmt.Elements = append(stmt.Elements, p.parseArrayLiteral())
+		case token.ADDRESS_LITERAL:
+			stmt.Elements = append(stmt.Elements, p.parseAddressLiteral())
+		}
+	}
+	p.nextToken()
+
+	if !p.expectPeek(token.SEMICOLON) {
+		p.peekError(token.SEMICOLON)
+		return nil
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseBoolLiteral() ast.Expression {
+	stmt := &ast.BooleanLiteral{Token: p.cur}
+	if p.cur.Literal == "true" {
+		stmt.Value = true
+	} else {
+		stmt.Value = false
+	}
+	if p.peek.Type == token.SEMICOLON {
+		if !p.expectPeek(token.SEMICOLON) {
+			p.peekError(token.SEMICOLON)
+			return nil
+		}
 	}
 	return stmt
 }
@@ -651,7 +789,12 @@ func (p *Parser) parseArrayLiteral() ast.Expression {
 func (p *Parser) parseStringLiteral() ast.Expression {
 	stmt := &ast.StringLiteral{Token: p.cur}
 	stmt.Value = p.cur.Literal
-	p.nextToken()
+	if p.peek.Type == token.SEMICOLON {
+		if !p.expectPeek(token.SEMICOLON) {
+			p.peekError(token.SEMICOLON)
+			return nil
+		}
+	}
 	return stmt
 }
 
@@ -668,8 +811,6 @@ func (p *Parser) parseConstExpression() ast.Expression {
 
 	stmt.Name = p.cur.Literal
 
-	fmt.Println(p.cur.Literal)
-
 	if !p.expectPeek(token.COLON) {
 		p.peekError(token.COLON)
 		return nil
@@ -678,13 +819,6 @@ func (p *Parser) parseConstExpression() ast.Expression {
 	p.nextToken()
 
 	stmt.Value = p.parseExpression()
-
-	if p.peek.Type != token.SEMICOLON {
-		p.peekError(token.SEMICOLON)
-		return nil
-	}
-
-	p.nextToken()
 
 	return stmt
 
@@ -702,9 +836,12 @@ func (p *Parser) parseStorageStatement() ast.Expression {
 
 	stmt.Name = p.cur.Literal
 
-	p.expectPeek(token.LPAREN)
+	if !p.expectPeek(token.LPAREN) {
+		p.peekError(token.LPAREN)
+		return nil
+	}
 
-	for p.cur.Type != token.RPAREN && p.cur.Type != token.EOF {
+	for p.peek.Type != token.RPAREN && p.peek.Type != token.EOF {
 		p.nextToken()
 
 		if p.cur.Type == token.IDENT {
@@ -716,17 +853,29 @@ func (p *Parser) parseStorageStatement() ast.Expression {
 		}
 	}
 
+	p.nextToken()
+
 	if !p.expectPeek(token.COLON) {
 		fmt.Printf("Parsing storage access statement: %s \n", p.cur.Literal)
 		access_storage := &ast.StorageAccessStatement{Token: token.Token{Type: token.STORAGE, Literal: "storage"}}
 		access_storage.Name = stmt.Name
 		access_storage.Params = stmt.Params
 
+		if !p.expectPeek(token.SEMICOLON) {
+			p.peekError(token.SEMICOLON)
+			return nil
+		}
+
 		return access_storage
 	}
 	p.nextToken()
 
 	stmt.Value = p.parseExpression()
+
+	if !p.expectPeek(token.SEMICOLON) {
+		p.peekError(token.SEMICOLON)
+		return nil
+	}
 
 	return stmt
 }
@@ -735,12 +884,25 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 	stmt := &ast.IntegerLiteral{Token: p.cur}
 	value, _ := strconv.ParseInt(p.cur.Literal, 10, 64) // parse the literal value as an integer
 	stmt.Value = uint64(value)
+	if p.peek.Type == token.SEMICOLON {
+		if !p.expectPeek(token.SEMICOLON) {
+			p.peekError(token.SEMICOLON)
+			return nil
+		}
+	}
 	return stmt
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {
 	fmt.Printf("Parsing identifier: %s \n", p.cur.Literal)
-	return &ast.Identifier{Token: p.cur, Value: p.cur.Literal}
+	stmt := &ast.Identifier{Token: p.cur, Value: p.cur.Literal}
+	if p.peek.Type == token.SEMICOLON {
+		if !p.expectPeek(token.SEMICOLON) {
+			p.peekError(token.SEMICOLON)
+			return nil
+		}
+	}
+	return stmt
 }
 
 func (p *Parser) parseBinaryExpression(left ast.Expression) ast.Expression {
@@ -753,5 +915,24 @@ func (p *Parser) parseBinaryExpression(left ast.Expression) ast.Expression {
 	}
 	p.nextToken()
 	expr.Right = p.parseExpression()
+	if p.peek.Type == token.SEMICOLON {
+		if !p.expectPeek(token.SEMICOLON) {
+			p.peekError(token.SEMICOLON)
+			return nil
+		}
+	}
+
 	return expr
+}
+
+func (p *Parser) parseAddressLiteral() ast.Expression {
+	stmt := &ast.AddressExpression{Token: p.cur}
+	stmt.Value = p.cur.Literal
+	if p.peek.Type == token.SEMICOLON {
+		if !p.expectPeek(token.SEMICOLON) {
+			p.peekError(token.SEMICOLON)
+			return nil
+		}
+	}
+	return stmt
 }

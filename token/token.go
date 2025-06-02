@@ -13,10 +13,14 @@ const (
 	EOF     = "EOF"
 
 	// Identificadores + literales
-	IDENT          = "IDENT"
-	INT            = "INT"
-	STRING         = "STRING"
-	STRING_LITERAL = "STRING_LITERAL"
+	IDENT           = "IDENT"
+	INT             = "INT"
+	STRING          = "STRING"
+	STRING_LITERAL  = "STRING_LITERAL"
+	ADDRESS_LITERAL = "ADDRESS_LITERAL"
+	BOOL_LITERAL    = "BOOL_LITERAL"
+	BYTE_LITERAL    = "BYTE_LITERAL"
+	HASH_LITERAL    = "HASH_LITERAL"
 
 	// Operadores
 	ASSIGN   = "="
@@ -94,9 +98,8 @@ var keywords = map[string]TokenType{
 	"byte":    BYTE,
 	"hash":    HASH,
 	"string":  STRING,
-	"array":   ARRAY,
-	"true":    BOOL,
-	"false":   BOOL,
+	"true":    BOOL_LITERAL,
+	"false":   BOOL_LITERAL,
 	"null":    VOID,
 }
 

@@ -86,6 +86,11 @@ func (l *Lexer) NextToken() token.Token {
 			tok.Literal = literal
 			return tok
 		} else if isDigit(l.ch) {
+			if l.isAddress() {
+				tok.Type = token.ADDRESS_LITERAL
+				tok.Literal = l.readAddress()
+				return tok
+			}
 			tok.Type = token.INT
 			tok.Literal = l.readNumber()
 			return tok
@@ -119,6 +124,58 @@ func (l *Lexer) skipComment() {
 func (l *Lexer) readIdentifier() string {
 	position := l.position
 	for isLetter(l.ch) || isDigit(l.ch) {
+		l.readChar()
+	}
+	return l.input[position:l.position]
+}
+
+func (l *Lexer) isAddress() bool {
+	// Guardar estado actual para poder retroceder
+	currentPos := l.position
+	currentReadPos := l.readPosition
+	currentCh := l.ch
+
+	defer func() {
+		l.position = currentPos
+		l.readPosition = currentReadPos
+		l.ch = currentCh
+	}()
+
+	// Verificar el patrón completo "1cx" + 30 caracteres hex
+	if l.ch != '1' {
+		return false
+	}
+	l.readChar()
+	if l.ch != 'c' {
+		return false
+	}
+	l.readChar()
+	if l.ch != 'x' {
+		return false
+	}
+	l.readChar()
+
+	// Verificar los 30 caracteres hexadecimales restantes
+	for i := 0; i < 30; i++ {
+		if l.readPosition > len(l.input) {
+			return false
+		}
+		if !isHexDigit(l.ch) {
+			return false
+		}
+		l.readChar()
+	}
+
+	return true
+}
+
+func (l *Lexer) readAddress() string {
+	position := l.position
+	// Avanzar los 33 caracteres (1 + c + x + 30 hex)
+	for i := 0; i < 33; i++ {
+		if l.readPosition > len(l.input) {
+			break
+		}
 		l.readChar()
 	}
 	return l.input[position:l.position]
@@ -169,3 +226,4 @@ func isLetter(ch byte) bool {
 func isDigit(ch byte) bool {
 	return unicode.IsDigit(rune(ch))
 }
+
