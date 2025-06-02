@@ -1,4 +1,4 @@
-pragma: 1.0.0-beta;
+pragma: "1.0.0";
 
 class contract Math {
 

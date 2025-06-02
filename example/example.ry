@@ -1,0 +1,43 @@
+pragma: "1.0.0";
+
+class contract Test {
+            pub func add(a: uint64, b: uint64): uint64{
+				return a + b;
+			}
+
+			pub func addWithParents(a: uint64, b: uint64): uint64{
+				return (a + b);
+			}
+
+			pub func name(): string{
+				return _name();
+			}
+
+			priv func _name(): string {
+				return "test";
+			}
+
+			pub func uint64Array(): []uint64{
+				return [1, 2, 3];
+			}
+
+			pub func stringArray(): []string{
+				return ["a", "b", "c"];
+			}
+
+			pub func boolArray(): []bool{
+				return [true, false, true];
+			}
+
+			pub func getAddress(): address{
+				return 1cxdc6e0e801fbe5ae5f2799361d34b53;
+			}
+				
+			pub func getHash(): hash{
+				return 0x5931b4ed56ace4c46b68524cb5bcbf4195f1bbaacbe1038dd5f9f057e6ece4a6;
+			}
+
+			pub func mod(a: uint64, b: uint64): uint64 {
+       			return (a % b);
+    		}
+}

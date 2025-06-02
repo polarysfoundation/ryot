@@ -730,6 +730,12 @@ func (p *Parser) parseExpression() ast.Expression {
 			return p.parseBinaryExpression(left)
 		case token.GTE:
 			return p.parseBinaryExpression(left)
+		case token.AND:
+			return p.parseBinaryExpression(left)
+		case token.OR:
+			return p.parseBinaryExpression(left)
+		case token.MOD:
+			return p.parseBinaryExpression(left)
 		}
 	}
 
@@ -871,7 +877,7 @@ func (p *Parser) parseStorageStatement() ast.Expression {
 
 	p.nextToken()
 
-	if !p.expectPeek(token.COLON) {
+	if p.cur.Type != token.COLON {
 		fmt.Printf("Parsing storage access statement: %s \n", p.cur.Literal)
 		access_storage := &ast.StorageAccessStatement{Token: token.Token{Type: token.STORAGE, Literal: "storage"}}
 		access_storage.Name = stmt.Name
@@ -900,6 +906,11 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 	stmt := &ast.IntegerLiteral{Token: p.cur}
 	value, _ := strconv.ParseInt(p.cur.Literal, 10, 64) // parse the literal value as an integer
 	stmt.Value = uint64(value)
+
+	if p.peek.Type == token.RPAREN {
+		p.nextToken()
+	}
+
 	if p.peek.Type == token.SEMICOLON {
 		if !p.expectPeek(token.SEMICOLON) {
 			p.peekError(token.SEMICOLON)

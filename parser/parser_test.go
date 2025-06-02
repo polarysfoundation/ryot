@@ -181,6 +181,10 @@ func TestParse_FuncWithReturn(t *testing.T) {
 				return 0x5931b4ed56ace4c46b68524cb5bcbf4195f1bbaacbe1038dd5f9f057e6ece4a6;
 			}
 
+			pub func mod(a: uint64, b: uint64): uint64 {
+       			return (a % b);
+    		}
+
 
 
 	}
