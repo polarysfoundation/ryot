@@ -424,3 +424,18 @@ func (al *ArrayLiteral) TokenLiteral() string {
 }
 
 func (al *ArrayLiteral) expressionNode() {}
+
+type HashLiteral struct {
+	Token token.Token // The 'hash' token
+	Value string
+}
+
+func (hl *HashLiteral) String() string {
+	return hl.Value
+}
+
+func (hl *HashLiteral) TokenLiteral() string {
+	return hl.Token.Literal
+}
+
+func (hl *HashLiteral) expressionNode() {}

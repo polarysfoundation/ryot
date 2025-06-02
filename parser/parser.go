@@ -687,7 +687,9 @@ func (p *Parser) parseExpression() ast.Expression {
 	case token.BOOL_LITERAL:
 		fmt.Printf("Parsing bool literal: %s \n", p.cur.Literal)
 		left = p.parseBoolLiteral()
-
+	case token.HASH_LITERAL:
+		fmt.Printf("Parsing hash literal: %s \n", p.cur.Literal)
+		left = p.parseHashLiteral()
 	case token.LBRACKET:
 		left = p.parseArrayLiteral()
 	case token.ADDRESS:
@@ -732,6 +734,20 @@ func (p *Parser) parseExpression() ast.Expression {
 	}
 
 	return left
+}
+
+func (p *Parser) parseHashLiteral() ast.Expression {
+	stmt := &ast.HashLiteral{Token: token.Token{Type: token.HASH, Literal: "hash"}}
+	stmt.Value = p.cur.Literal
+
+	if p.peek.Type != token.COMMA {
+		if !p.expectPeek(token.SEMICOLON) {
+			p.peekError(token.SEMICOLON)
+			return nil
+		}
+	}
+
+	return stmt
 }
 
 func (p *Parser) parseArrayLiteral() ast.Expression {
@@ -787,7 +803,7 @@ func (p *Parser) parseBoolLiteral() ast.Expression {
 }
 
 func (p *Parser) parseStringLiteral() ast.Expression {
-	stmt := &ast.StringLiteral{Token: p.cur}
+	stmt := &ast.StringLiteral{Token: token.Token{Type: token.STRING, Literal: "string"}}
 	stmt.Value = p.cur.Literal
 	if p.peek.Type == token.SEMICOLON {
 		if !p.expectPeek(token.SEMICOLON) {

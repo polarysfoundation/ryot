@@ -174,8 +174,14 @@ func TestParse_FuncWithReturn(t *testing.T) {
 			}
 
 			pub func getAddress(): address{
-				return 1cxdc6e0e801fbe5ae5f2799361d34b53
+				return 1cxdc6e0e801fbe5ae5f2799361d34b53;
 			}
+				
+			pub func getHash(): hash{
+				return 0x5931b4ed56ace4c46b68524cb5bcbf4195f1bbaacbe1038dd5f9f057e6ece4a6;
+			}
+
+
 
 	}
 	`

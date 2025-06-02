@@ -21,6 +21,7 @@ const (
 	BOOL_LITERAL    = "BOOL_LITERAL"
 	BYTE_LITERAL    = "BYTE_LITERAL"
 	HASH_LITERAL    = "HASH_LITERAL"
+	CXID_LITERAL    = "CXID_LITERAL"
 
 	// Operadores
 	ASSIGN   = "="
@@ -73,6 +74,7 @@ const (
 	BYTE    = "BYTE"
 	HASH    = "HASH"
 	ARRAY   = "ARRAY"
+	CXID    = "CXID"
 )
 
 var keywords = map[string]TokenType{
@@ -101,6 +103,7 @@ var keywords = map[string]TokenType{
 	"true":    BOOL_LITERAL,
 	"false":   BOOL_LITERAL,
 	"null":    VOID,
+	"cxid":    CXID,
 }
 
 func (t TokenType) String() string {

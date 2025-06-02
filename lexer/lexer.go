@@ -90,6 +90,10 @@ func (l *Lexer) NextToken() token.Token {
 				tok.Type = token.ADDRESS_LITERAL
 				tok.Literal = l.readAddress()
 				return tok
+			} else if l.isHash() {
+				tok.Type = token.HASH_LITERAL
+				tok.Literal = l.readHash()
+				return tok
 			}
 			tok.Type = token.INT
 			tok.Literal = l.readNumber()
@@ -169,6 +173,54 @@ func (l *Lexer) isAddress() bool {
 	return true
 }
 
+func (l *Lexer) isHash() bool {
+	// Guardar estado actual para poder retroceder
+	currentPos := l.position
+	currentReadPos := l.readPosition
+	currentCh := l.ch
+
+	defer func() {
+		l.position = currentPos
+		l.readPosition = currentReadPos
+		l.ch = currentCh
+	}()
+
+	// Verificar el patrón completo "0x" + 64 caracteres hex
+	if l.ch != '0' {
+		return false
+	}
+	l.readChar()
+	if l.ch != 'x' {
+		return false
+	}
+	l.readChar()
+
+	// Verificar los 64 caracteres hexadecimales restantes
+	for i := 0; i < 64; i++ {
+		if l.readPosition > len(l.input) {
+			return false
+		}
+		if !isHexDigit(l.ch) {
+			return false
+		}
+		l.readChar()
+	}
+
+	return true
+}
+
+func (l *Lexer) readHash() string {
+	position := l.position
+	// Avanzar los 64 caracteres ( 0 + x + 64 hex)
+	for i := 0; i < 66; i++ {
+		if l.readPosition > len(l.input) {
+			break
+		}
+		l.readChar()
+	}
+	return l.input[position:l.position]
+}
+
 func (l *Lexer) readAddress() string {
 	position := l.position
 	// Avanzar los 33 caracteres (1 + c + x + 30 hex)
@@ -226,4 +278,3 @@ func isLetter(ch byte) bool {
 func isDigit(ch byte) bool {
 	return unicode.IsDigit(rune(ch))
 }
-
