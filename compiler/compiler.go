@@ -1,9 +1,11 @@
 package compiler
 
 import (
+	"encoding/hex"
 	"fmt" // Importa fmt para el manejo de errores
 	"os"
 
+	pm256 "github.com/polarysfoundation/pm-256"
 	"github.com/polarysfoundation/ryot/ast"
 	"github.com/polarysfoundation/ryot/codegen"
 	"github.com/polarysfoundation/ryot/lexer"
@@ -27,6 +29,11 @@ func Compile(input string) (*CompiledContract, error) {
 	l := lexer.New(input)
 	p := parser.New(l)
 	program := p.ParseProgram() // Asume que ParseProgram ya maneja sus propios errores o los propaga.
+
+	buf := make([]byte, 32)
+	h := pm256.New256()
+	h.Write([]byte(input))
+	h.Sum(buf[:0])
 
 	if _, err := os.Stat(path); err == nil {
 		os.RemoveAll(path)
@@ -83,10 +90,10 @@ func Compile(input string) (*CompiledContract, error) {
 	if err := g.WriteABI(path + "abi.json"); err != nil {
 		return nil, fmt.Errorf("error al escribir ABI: %w", err)
 	}
-	if err := g.WriteRYC(path + "bytecode.ryc"); err != nil {
+	if err := g.WriteRYC(path+"bytecode.ryc", hex.EncodeToString(buf)); err != nil {
 		return nil, fmt.Errorf("error al escribir RYC: %w", err)
 	}
-	if err := g.WriteRYBC(path + "bytecode.rybc"); err != nil {
+	if err := g.WriteRYBC(path+"bytecode.rybc", buf); err != nil {
 		return nil, fmt.Errorf("error al escribir RYBC: %w", err)
 	}
 

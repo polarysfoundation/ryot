@@ -334,10 +334,11 @@ func (g *Generator) WriteABI(filename string) error {
 }
 
 // WriteRYC escribe el código de Ryot (bytecode legible por humanos) en un archivo.
-func (g *Generator) WriteRYC(filename string) error {
+func (g *Generator) WriteRYC(filename string, codeHash string) error {
 	var builder strings.Builder
 	builder.WriteString(fmt.Sprintf("; ABI: %s\n", g.contractName))
-	builder.WriteString("; Bytecode disassembly\n\n")
+	builder.WriteString("; Bytecode disassembly\n")
+	builder.WriteString("; Source code hash: " + "0x" + codeHash + "\n\n")
 
 	for _, instr := range g.instructions {
 		// La propiedad 'Raw' ahora es generada consistentemente por 'emit'.
@@ -351,7 +352,7 @@ func (g *Generator) WriteRYC(filename string) error {
 }
 
 // WriteRYBC escribe el bytecode binario de Ryot en un archivo.
-func (g *Generator) WriteRYBC(filename string) error {
+func (g *Generator) WriteRYBC(filename string, codehash []byte) error {
 	var bytecode []byte
 
 	// Número mágico para Ryot bytecode (0xRYBC)
@@ -359,6 +360,12 @@ func (g *Generator) WriteRYBC(filename string) error {
 
 	// Versión (1.0)
 	bytecode = append(bytecode, RyBCVersionMajor, RyBCVersionMinor)
+
+	// Añadir el hash del código al bytecode
+	if len(codehash) != 32 {
+		return fmt.Errorf("codehash debe tener 32 bytes, tiene %d", len(codehash))
+	}
+	bytecode = append(bytecode, codehash...)
 
 	for _, instr := range g.instructions {
 		bytecode = append(bytecode, byte(instr.Opcode))
