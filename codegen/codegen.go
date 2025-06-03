@@ -7,6 +7,12 @@ import (
 	"strings"
 
 	"github.com/polarysfoundation/ryot/ast"
+	"github.com/polarysfoundation/ryot/token"
+)
+
+const (
+	emptyAddress = "1cx00000000000000000000000000000"
+	zeroHash     = "0x0000000000000000000000000000000000000000000000000000000000000000" // Zero hash
 )
 
 // Constantes para los números mágicos y la versión del bytecode.
@@ -188,9 +194,10 @@ func (g *Generator) Generate(node ast.Node) error {
 	case *ast.StorageDeclaration:
 		g.emit(OpStore, n.Name)
 		for _, param := range n.Params {
-			g.emit(OpConst, param.Name, param.Type) // Parámetros de almacenamiento.
+			// Debo agregar el manejo de param para guardar los tipos de almacenamientos permitidos
+			g.emit(OpConst, param.Type)
+
 		}
-		// Si `n.Value` representa un valor inicial complejo, necesitaría ser generado recursivamente.
 		// Aquí asumimos que `n.Value.Type` es suficiente para el registro.
 		g.emit(OpConst, n.Value.Type) // Tipo del valor de almacenamiento.
 		g.emit(OpEnd, "STORAGE")
@@ -305,7 +312,15 @@ func (g *Generator) Generate(node ast.Node) error {
 
 		}
 		g.emit(OpEnd, "LOAD") // Podría ser innecesario dependiendo del significado de END_LOAD.
+	case *ast.StorageStatement:
+		g.emit(OpStore, n.Name)
 
+		if n.Value != nil {
+			if err := g.Generate(n.Value); err != nil {
+				return err
+			}
+		}
+		g.emit(OpEnd, "STORE") // Marca el final de la operación de almacenamiento.
 	case *ast.FuncStatement:
 		funcABI := ABIFunction{
 			Name:       n.Name,
@@ -336,7 +351,42 @@ func (g *Generator) Generate(node ast.Node) error {
 
 		g.emit(OpEnd, "FUNC")
 		g.currentFunc = nil // Limpia la función actual.
+	case *ast.VariableStatement:
+		g.emit(OpStore, n.Name)
+		if n.Value != nil {
+			if err := g.Generate(n.Value); err != nil {
+				return err
+			}
+		}
+		g.emit(OpEnd, "STORE") // Marca el final de la operación de almacenamiento.
+	case *ast.VariableStatementNonInitializer:
+		g.emit(OpStore, n.Name)
 
+		switch n.Token.Type {
+		case token.UINT64:
+			g.emit(OpConst, uint64(0))
+		case token.ADDRESS:
+			g.emit(OpConst, OpZeroAddr)
+		case token.BOOL:
+			g.emit(OpConst, false)
+		case token.BYTE:
+			g.emit(OpConst, byte(0))
+		case token.HASH:
+			g.emit(OpConst, OpZeroHash)
+		case token.STRING:
+			g.emit(OpConst, "")
+
+		}
+
+		g.emit(OpEnd, "STORE") // Marca el final de la operación de almacenamiento.
+	case *ast.ConstExpression:
+		g.emit(OpConst, n.Name)
+		if n.Value != nil {
+			if err := g.Generate(n.Value); err != nil {
+				return err
+			}
+		}
+		g.emit(OpEnd, "CONST") // Marca el final de la operación de constante.
 	case *ast.ReturnStatement:
 		if n.Value != nil {
 			if err := g.Generate(n.Value); err != nil {

@@ -477,3 +477,40 @@ func (ev *ErrValue) TokenLiteral() string {
 }
 
 func (ev *ErrValue) expressionNode() {}
+
+type VariableStatement struct {
+	Token  token.Token // The type token (e.g., uint64, string)
+	Name   string
+	Value  Expression
+	Public bool
+}
+
+func (vd *VariableStatement) statementNode()       {}
+func (vd *VariableStatement) TokenLiteral() string { return vd.Token.Literal }
+func (vd *VariableStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString(vd.Token.Literal) // Type
+	out.WriteString(" ")
+	out.WriteString(vd.Name) // Variable name
+	if vd.Value != nil {
+		out.WriteString(": ")
+		out.WriteString(vd.Value.String()) // Initial value
+	}
+	return out.String()
+}
+
+type VariableStatementNonInitializer struct {
+	Token  token.Token // The type token (e.g., uint64, string)
+	Name   string
+	Public bool
+}
+
+func (vd *VariableStatementNonInitializer) statementNode()       {}
+func (vd *VariableStatementNonInitializer) TokenLiteral() string { return vd.Token.Literal }
+func (vd *VariableStatementNonInitializer) String() string {
+	var out bytes.Buffer
+	out.WriteString(vd.Token.Literal) // Type
+	out.WriteString(" ")
+	out.WriteString(vd.Name) // Variable name
+	return out.String()
+}

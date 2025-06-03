@@ -96,15 +96,11 @@ func (p *Parser) parsePragma() ast.Statement {
 
 	if p.cur.Type != token.STRING_LITERAL { // if the next token is not a string
 		p.peekError(token.STRING_LITERAL) // add an error message to the errors slice
-		return nil                        // return nil
 	}
 
 	stmt.Value = p.cur.Literal // set the Value field of the PragmaStatement node
 
-	if !p.expectPeek(token.SEMICOLON) {
-		p.peekError(token.SEMICOLON)
-		return nil
-	}
+	p.expectPeek(token.SEMICOLON)
 
 	p.nextToken() // advance the parser to the next token
 
@@ -128,14 +124,10 @@ func (p *Parser) parseClass() ast.Statement {
 	// Get contract name
 	if p.cur.Type != token.IDENT {
 		p.peekError(token.IDENT) // add an error message to the errors slice
-		return nil               // return nil
 	}
 	stmt.Name = p.cur.Literal // set the Name field of the ClassStatement node
 
-	if !p.expectPeek(token.LBRACE) {
-		p.peekError(token.LBRACE)
-		return nil
-	}
+	p.expectPeek(token.LBRACE)
 
 	stmt.Body = []ast.Statement{}                                 // initialize the Body slice
 	for p.peek.Type != token.RBRACE && p.peek.Type != token.EOF { // loop until the end of the class
@@ -160,11 +152,56 @@ func (p *Parser) parseClass() ast.Statement {
 		case token.FUNC:
 			funcStmt := p.parseFunc(public)
 			stmt.Body = append(stmt.Body, funcStmt)
+		default:
+			switch p.cur.Type {
+			case token.UINT64:
+				stmt.Body = append(stmt.Body, p.parseVariables(public))
+			case token.ADDRESS:
+				stmt.Body = append(stmt.Body, p.parseVariables(public))
+			case token.BOOL:
+				stmt.Body = append(stmt.Body, p.parseVariables(public))
+			case token.BYTE:
+				stmt.Body = append(stmt.Body, p.parseVariables(public))
+			case token.HASH:
+				stmt.Body = append(stmt.Body, p.parseVariables(public))
+			case token.STRING:
+				stmt.Body = append(stmt.Body, p.parseVariables(public))
+			}
 		}
 
 	}
 
 	return stmt // return the ClassStatement node
+}
+
+func (p *Parser) parseVariables(public bool) ast.Statement {
+	stmt := &ast.VariableStatement{Token: p.cur}
+	p.nextToken()
+
+	stmt.Public = public
+
+	if p.cur.Type != token.IDENT {
+		p.peekError(token.IDENT)
+	}
+
+	stmt.Name = p.cur.Literal
+
+	if p.peek.Type == token.COLON {
+		p.nextToken()
+		p.nextToken()
+
+		stmt.Value = p.parseExpression()
+	} else {
+		varStmt := &ast.VariableStatementNonInitializer{Token: stmt.Token}
+		varStmt.Name = stmt.Name
+		varStmt.Public = public
+
+		p.expectPeek(token.SEMICOLON)
+
+		return varStmt
+	}
+
+	return stmt
 }
 
 // parseEnum parses an Enum statement and returns an AST EnumStatement node
@@ -189,10 +226,7 @@ func (p *Parser) parseEnum() ast.Statement {
 		p.nextToken() // advance the parser to the next token
 		if p.cur.Type == token.IDENT {
 			stmt.Values = append(stmt.Values, p.cur.Literal) // add the identifier to the Values slice of the EnumStatement node
-			if !p.expectPeek(token.SEMICOLON) {
-				p.peekError(token.SEMICOLON)
-				return nil
-			}
+			p.expectPeek(token.SEMICOLON)
 		}
 	}
 
@@ -317,10 +351,7 @@ func (p *Parser) parseStorage(public bool) ast.Statement {
 	}
 	stmt.Name = p.cur.Literal // set the Name field of the StorageDeclaration node
 
-	if !p.expectPeek(token.LPAREN) {
-		p.peekError(token.LPAREN)
-		return nil
-	}
+	p.expectPeek(token.LPAREN)
 
 	stmt.Params = []ast.Key{}                                     // initialize the Params slice
 	for p.peek.Type != token.RPAREN && p.peek.Type != token.EOF { // loop until a right parenthesis ')' or EOF is encountered
@@ -329,10 +360,9 @@ func (p *Parser) parseStorage(public bool) ast.Statement {
 			key := ast.Key{Token: p.cur} // create a new Key node
 			key.Name = p.cur.Literal     // set the parameter name
 
-			if !p.expectPeek(token.COLON) {
-				p.peekError(token.COLON)
-				return nil
-			}
+			fmt.Println(key)
+
+			p.expectPeek(token.COLON)
 
 			p.nextToken()
 
@@ -406,10 +436,7 @@ func (p *Parser) parseStorage(public bool) ast.Statement {
 		return nil               // and return nil as parsing failed
 	}
 
-	if !p.expectPeek(token.SEMICOLON) {
-		p.peekError(token.SEMICOLON)
-		return nil
-	}
+	p.expectPeek(token.SEMICOLON)
 
 	return stmt // return the fully parsed StorageDeclaration node
 
@@ -423,17 +450,13 @@ func (p *Parser) parseFunc(public bool) ast.Statement {
 
 	if p.cur.Type != token.IDENT && p.peek.Type != token.LPAREN {
 		p.peekError(token.IDENT)
-		return nil
 	}
 
 	stmt.Name = p.cur.Literal
 
 	fmt.Printf("========= PREPARING FUNC %s ========\n", stmt.Name)
 
-	if !p.expectPeek(token.LPAREN) {
-		p.peekError(token.LPAREN)
-		return nil
-	}
+	p.expectPeek(token.LPAREN)
 
 	for p.peek.Type != token.RPAREN && p.peek.Type != token.EOF {
 		p.nextToken()
@@ -442,10 +465,7 @@ func (p *Parser) parseFunc(public bool) ast.Statement {
 			key := ast.Key{Token: p.cur}
 			key.Name = p.cur.Literal
 
-			if !p.expectPeek(token.COLON) {
-				p.peekError(token.COLON)
-				return nil
-			}
+			p.expectPeek(token.COLON)
 
 			p.nextToken()
 
@@ -503,10 +523,7 @@ func (p *Parser) parseFunc(public bool) ast.Statement {
 
 	p.nextToken()
 
-	if !p.expectPeek(token.COLON) {
-		p.peekError(token.COLON)
-		return nil
-	}
+	p.expectPeek(token.COLON)
 
 	p.nextToken()
 
@@ -542,10 +559,7 @@ func (p *Parser) parseFunc(public bool) ast.Statement {
 		return nil
 	}
 
-	if !p.expectPeek(token.LBRACE) {
-		p.peekError(token.LBRACE)
-		return nil
-	}
+	p.expectPeek(token.LBRACE)
 
 	stmt.Body = []ast.Statement{}
 	for p.peek.Type != token.RBRACE && p.peek.Type != token.EOF {
@@ -585,15 +599,11 @@ func (p *Parser) parseDelete() ast.Statement {
 
 	if p.cur.Type != token.IDENT {
 		p.peekError(token.IDENT)
-		return nil
 	}
 
 	stmt.Name = p.cur.Literal
 
-	if !p.expectPeek(token.LPAREN) {
-		p.peekError(token.LPAREN)
-		return nil
-	}
+	p.expectPeek(token.LPAREN)
 
 	for p.peek.Type != token.RPAREN && p.peek.Type != token.EOF {
 		p.nextToken()
@@ -607,10 +617,7 @@ func (p *Parser) parseDelete() ast.Statement {
 
 	p.nextToken()
 
-	if !p.expectPeek(token.SEMICOLON) {
-		p.peekError(token.SEMICOLON)
-		return nil
-	}
+	p.expectPeek(token.SEMICOLON)
 
 	return stmt
 }
@@ -623,15 +630,11 @@ func (p *Parser) parseNew() ast.Statement {
 
 	if p.cur.Type != token.IDENT {
 		p.peekError(token.IDENT)
-		return nil
 	}
 
 	stmt.Name = p.cur.Literal
 
-	if !p.expectPeek(token.LPAREN) {
-		p.peekError(token.LPAREN)
-		return nil
-	}
+	p.expectPeek(token.LPAREN)
 
 	p.nextToken()
 
@@ -756,7 +759,6 @@ func (p *Parser) parseErrValue() ast.Expression {
 
 	if p.cur.Type != token.STRING_LITERAL {
 		p.peekError(token.STRING_LITERAL)
-		return nil
 	}
 
 	stmt.Value = p.parseExpression()
@@ -787,10 +789,7 @@ func (p *Parser) parseHashLiteral() ast.Expression {
 	stmt.Value = p.cur.Literal
 
 	if p.peek.Type != token.COMMA {
-		if !p.expectPeek(token.SEMICOLON) {
-			p.peekError(token.SEMICOLON)
-			return nil
-		}
+		p.expectPeek(token.SEMICOLON)
 	}
 
 	return stmt
@@ -824,10 +823,7 @@ func (p *Parser) parseArrayLiteral() ast.Expression {
 	}
 	p.nextToken()
 
-	if !p.expectPeek(token.SEMICOLON) {
-		p.peekError(token.SEMICOLON)
-		return nil
-	}
+	p.expectPeek(token.SEMICOLON)
 
 	return stmt
 }
@@ -850,7 +846,6 @@ func (p *Parser) parseStringLiteral() ast.Expression {
 	stmt.Value = p.cur.Literal
 	if p.peek.Type == token.SEMICOLON {
 		p.expectPeek(token.SEMICOLON)
-		return nil
 	}
 	return stmt
 }
@@ -863,15 +858,11 @@ func (p *Parser) parseConstExpression() ast.Expression {
 
 	if p.cur.Type != token.IDENT {
 		p.peekError(token.IDENT)
-		return nil
 	}
 
 	stmt.Name = p.cur.Literal
 
-	if !p.expectPeek(token.COLON) {
-		p.peekError(token.COLON)
-		return nil
-	}
+	p.expectPeek(token.COLON)
 
 	p.nextToken()
 
@@ -888,15 +879,11 @@ func (p *Parser) parseStorageStatement() ast.Expression {
 
 	if p.cur.Type != token.IDENT {
 		p.peekError(token.IDENT)
-		return nil
 	}
 
 	stmt.Name = p.cur.Literal
 
-	if !p.expectPeek(token.LPAREN) {
-		p.peekError(token.LPAREN)
-		return nil
-	}
+	p.expectPeek(token.LPAREN)
 
 	for p.peek.Type != token.RPAREN && p.peek.Type != token.EOF {
 		p.nextToken()
@@ -912,19 +899,17 @@ func (p *Parser) parseStorageStatement() ast.Expression {
 
 	p.nextToken()
 
-	if p.cur.Type != token.COLON {
+	if p.peek.Type != token.COLON {
 		fmt.Printf("Parsing storage access statement: %s \n", p.cur.Literal)
 		access_storage := &ast.StorageAccessStatement{Token: token.Token{Type: token.STORAGE, Literal: "storage"}}
 		access_storage.Name = stmt.Name
 		access_storage.Params = stmt.Params
 
-		if !p.expectPeek(token.SEMICOLON) {
-			p.peekError(token.SEMICOLON)
-			return nil
-		}
+		p.expectPeek(token.SEMICOLON)
 
 		return access_storage
 	}
+	p.nextToken()
 	p.nextToken()
 
 	stmt.Value = p.parseExpression()
@@ -982,10 +967,7 @@ func (p *Parser) parseAddressLiteral() ast.Expression {
 	stmt := &ast.AddressExpression{Token: p.cur}
 	stmt.Value = p.cur.Literal
 	if p.peek.Type == token.SEMICOLON {
-		if !p.expectPeek(token.SEMICOLON) {
-			p.peekError(token.SEMICOLON)
-			return nil
-		}
+		p.expectPeek(token.SEMICOLON)
 	}
 	return stmt
 }

@@ -1,0 +1,398 @@
+{
+  "Statements": [
+    { "Token": { "Type": "PRAGMA", "Literal": "pragma" }, "Value": "1.0.0" },
+    {
+      "Token": { "Type": "CLASS", "Literal": "class" },
+      "Name": "Test",
+      "IsInterface": false,
+      "Body": [
+        {
+          "Token": { "Type": "UINT64", "Literal": "uint64" },
+          "Name": "count",
+          "Public": true
+        },
+        {
+          "Token": { "Type": "STORAGE", "Literal": "storage" },
+          "Public": true,
+          "Name": "balance",
+          "Params": [
+            {
+              "Token": { "Type": "IDENT", "Literal": "account" },
+              "Name": "account",
+              "Type": "address"
+            }
+          ],
+          "Value": {
+            "Token": { "Type": "UINT64", "Literal": "uint64" },
+            "Type": "uint64"
+          }
+        },
+        {
+          "Token": { "Type": "FUNC", "Literal": "func" },
+          "Public": true,
+          "Name": "add",
+          "Params": [
+            {
+              "Token": { "Type": "IDENT", "Literal": "a" },
+              "Name": "a",
+              "Type": "uint64"
+            },
+            {
+              "Token": { "Type": "IDENT", "Literal": "b" },
+              "Name": "b",
+              "Type": "uint64"
+            }
+          ],
+          "ReturnType": {
+            "Token": { "Type": "UINT64", "Literal": "uint64" },
+            "Type": "uint64"
+          },
+          "Body": [
+            {
+              "Token": { "Type": "RETURN", "Literal": "return" },
+              "Value": {
+                "Token": { "Type": "+", "Literal": "+" },
+                "Left": {
+                  "Token": { "Type": "IDENT", "Literal": "a" },
+                  "Value": "a"
+                },
+                "Operator": "+",
+                "Right": {
+                  "Token": { "Type": "IDENT", "Literal": "b" },
+                  "Value": "b"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "Token": { "Type": "FUNC", "Literal": "func" },
+          "Public": true,
+          "Name": "addWithParents",
+          "Params": [
+            {
+              "Token": { "Type": "IDENT", "Literal": "a" },
+              "Name": "a",
+              "Type": "uint64"
+            },
+            {
+              "Token": { "Type": "IDENT", "Literal": "b" },
+              "Name": "b",
+              "Type": "uint64"
+            }
+          ],
+          "ReturnType": {
+            "Token": { "Type": "UINT64", "Literal": "uint64" },
+            "Type": "uint64"
+          },
+          "Body": [
+            {
+              "Token": { "Type": "RETURN", "Literal": "return" },
+              "Value": {
+                "Token": { "Type": "+", "Literal": "+" },
+                "Left": {
+                  "Token": { "Type": "IDENT", "Literal": "a" },
+                  "Value": "a"
+                },
+                "Operator": "+",
+                "Right": {
+                  "Token": { "Type": "IDENT", "Literal": "b" },
+                  "Value": "b"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "Token": { "Type": "FUNC", "Literal": "func" },
+          "Public": true,
+          "Name": "name",
+          "Params": null,
+          "ReturnType": {
+            "Token": { "Type": "STRING", "Literal": "string" },
+            "Type": "string"
+          },
+          "Body": [
+            {
+              "Token": { "Type": "RETURN", "Literal": "return" },
+              "Value": {
+                "Token": { "Type": "STORAGE", "Literal": "storage" },
+                "Name": "_name",
+                "Params": null
+              }
+            }
+          ]
+        },
+        {
+          "Token": { "Type": "FUNC", "Literal": "func" },
+          "Public": false,
+          "Name": "_name",
+          "Params": null,
+          "ReturnType": {
+            "Token": { "Type": "STRING", "Literal": "string" },
+            "Type": "string"
+          },
+          "Body": [
+            {
+              "Token": { "Type": "RETURN", "Literal": "return" },
+              "Value": {
+                "Token": { "Type": "STRING", "Literal": "string" },
+                "Value": "test"
+              }
+            }
+          ]
+        },
+        {
+          "Token": { "Type": "FUNC", "Literal": "func" },
+          "Public": true,
+          "Name": "uint64Array",
+          "Params": null,
+          "ReturnType": {
+            "Token": { "Type": "ARRAY", "Literal": "array" },
+            "Type": "[]uint64"
+          },
+          "Body": [
+            {
+              "Token": { "Type": "RETURN", "Literal": "return" },
+              "Value": {
+                "Token": { "Type": "ARRAY", "Literal": "array" },
+                "Elements": [
+                  { "Token": { "Type": "INT", "Literal": "1" }, "Value": 1 },
+                  { "Token": { "Type": "INT", "Literal": "2" }, "Value": 2 },
+                  { "Token": { "Type": "INT", "Literal": "3" }, "Value": 3 }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "Token": { "Type": "FUNC", "Literal": "func" },
+          "Public": true,
+          "Name": "stringArray",
+          "Params": null,
+          "ReturnType": {
+            "Token": { "Type": "ARRAY", "Literal": "array" },
+            "Type": "[]string"
+          },
+          "Body": [
+            {
+              "Token": { "Type": "RETURN", "Literal": "return" },
+              "Value": {
+                "Token": { "Type": "ARRAY", "Literal": "array" },
+                "Elements": [
+                  {
+                    "Token": { "Type": "STRING", "Literal": "string" },
+                    "Value": "a"
+                  },
+                  {
+                    "Token": { "Type": "STRING", "Literal": "string" },
+                    "Value": "b"
+                  },
+                  {
+                    "Token": { "Type": "STRING", "Literal": "string" },
+                    "Value": "c"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "Token": { "Type": "FUNC", "Literal": "func" },
+          "Public": true,
+          "Name": "boolArray",
+          "Params": null,
+          "ReturnType": {
+            "Token": { "Type": "ARRAY", "Literal": "array" },
+            "Type": "[]bool"
+          },
+          "Body": [
+            {
+              "Token": { "Type": "RETURN", "Literal": "return" },
+              "Value": {
+                "Token": { "Type": "ARRAY", "Literal": "array" },
+                "Elements": [
+                  {
+                    "Token": { "Type": "BOOL_LITERAL", "Literal": "true" },
+                    "Value": true
+                  },
+                  {
+                    "Token": { "Type": "BOOL_LITERAL", "Literal": "false" },
+                    "Value": false
+                  },
+                  {
+                    "Token": { "Type": "BOOL_LITERAL", "Literal": "true" },
+                    "Value": true
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "Token": { "Type": "FUNC", "Literal": "func" },
+          "Public": true,
+          "Name": "getAddress",
+          "Params": null,
+          "ReturnType": {
+            "Token": { "Type": "ADDRESS", "Literal": "address" },
+            "Type": "address"
+          },
+          "Body": [
+            {
+              "Token": { "Type": "RETURN", "Literal": "return" },
+              "Value": {
+                "Token": {
+                  "Type": "ADDRESS_LITERAL",
+                  "Literal": "1cxdc6e0e801fbe5ae5f2799361d34b53"
+                },
+                "Value": "1cxdc6e0e801fbe5ae5f2799361d34b53"
+              }
+            }
+          ]
+        },
+        {
+          "Token": { "Type": "FUNC", "Literal": "func" },
+          "Public": true,
+          "Name": "getHash",
+          "Params": null,
+          "ReturnType": {
+            "Token": { "Type": "HASH", "Literal": "hash" },
+            "Type": "hash"
+          },
+          "Body": [
+            {
+              "Token": { "Type": "RETURN", "Literal": "return" },
+              "Value": {
+                "Token": { "Type": "HASH", "Literal": "hash" },
+                "Value": "0x5931b4ed56ace4c46b68524cb5bcbf4195f1bbaacbe1038dd5f9f057e6ece4a6"
+              }
+            }
+          ]
+        },
+        {
+          "Token": { "Type": "FUNC", "Literal": "func" },
+          "Public": true,
+          "Name": "addbalance",
+          "Params": [
+            {
+              "Token": { "Type": "IDENT", "Literal": "account" },
+              "Name": "account",
+              "Type": "address"
+            },
+            {
+              "Token": { "Type": "IDENT", "Literal": "amount" },
+              "Name": "amount",
+              "Type": "uint64"
+            }
+          ],
+          "ReturnType": {
+            "Token": { "Type": "VOID", "Literal": "void" },
+            "Type": "void"
+          },
+          "Body": [
+            {
+              "Token": { "Type": "UINT64", "Literal": "uint64" },
+              "Expression": {
+                "Token": { "Type": "UINT64", "Literal": "uint64" },
+                "Name": "currentBalance",
+                "Value": {
+                  "Token": { "Type": "STORAGE", "Literal": "storage" },
+                  "Name": "balance",
+                  "Params": [
+                    {
+                      "Token": { "Type": "IDENT", "Literal": "account" },
+                      "Value": "account"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "Token": { "Type": "IDENT", "Literal": "balance" },
+              "Expression": null
+            },
+            {
+              "Token": { "Type": "IDENT", "Literal": "currentBalance" },
+              "Expression": {
+                "Token": { "Type": "+", "Literal": "+" },
+                "Left": {
+                  "Token": { "Type": "IDENT", "Literal": "currentBalance" },
+                  "Value": "currentBalance"
+                },
+                "Operator": "+",
+                "Right": {
+                  "Token": { "Type": "IDENT", "Literal": "amount" },
+                  "Value": "amount"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "Token": { "Type": "FUNC", "Literal": "func" },
+          "Public": true,
+          "Name": "mod",
+          "Params": [
+            {
+              "Token": { "Type": "IDENT", "Literal": "a" },
+              "Name": "a",
+              "Type": "uint64"
+            },
+            {
+              "Token": { "Type": "IDENT", "Literal": "b" },
+              "Name": "b",
+              "Type": "uint64"
+            }
+          ],
+          "ReturnType": {
+            "Token": { "Type": "UINT64", "Literal": "uint64" },
+            "Type": "uint64"
+          },
+          "Body": [
+            {
+              "Token": { "Type": "CHECK", "Literal": "check" },
+              "Expression": {
+                "Token": { "Type": "CHECK", "Literal": "check" },
+                "Value": {
+                  "Token": { "Type": "!=", "Literal": "!=" },
+                  "Left": {
+                    "Token": { "Type": "IDENT", "Literal": "b" },
+                    "Value": "b"
+                  },
+                  "Operator": "!=",
+                  "Right": {
+                    "Token": { "Type": "INT", "Literal": "0" },
+                    "Value": 0
+                  }
+                },
+                "Return": {
+                  "Token": { "Type": "ERR", "Literal": "err" },
+                  "Value": {
+                    "Token": { "Type": "STRING", "Literal": "string" },
+                    "Value": "Division by zero"
+                  }
+                }
+              }
+            },
+            {
+              "Token": { "Type": "RETURN", "Literal": "return" },
+              "Value": {
+                "Token": { "Type": "%", "Literal": "%" },
+                "Left": {
+                  "Token": { "Type": "IDENT", "Literal": "a" },
+                  "Value": "a"
+                },
+                "Operator": "%",
+                "Right": {
+                  "Token": { "Type": "IDENT", "Literal": "b" },
+                  "Value": "b"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

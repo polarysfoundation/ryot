@@ -72,6 +72,9 @@ const (
 	OpCheckEnd // 0xFD - verify to end
 	OpJumpEnd  // 0xFC - jump to end
 	OpLabel    // 0xFB - label for jump
+
+	OpZeroHash // 0xFA - hash de 32 bytes con valor cero (utilizado para inicializar variables o como valor por defecto en estructuras de datos)
+	OpZeroAddr // 0xF9 - address con valor cero
 )
 
 // Instruction representa una única instrucción de bytecode.

@@ -1,6 +1,12 @@
 pragma: "1.0.0";
 
 class contract Test {
+            pub uint64 count;
+
+            pub uint64 initalized_count: 125485;
+
+            pub storage balance(account: address): uint64;
+
             pub func add(a: uint64, b: uint64): uint64{
 				return a + b;
 			}
@@ -36,6 +42,11 @@ class contract Test {
 			pub func getHash(): hash{
 				return 0x5931b4ed56ace4c46b68524cb5bcbf4195f1bbaacbe1038dd5f9f057e6ece4a6;
 			}
+
+            pub func addbalance(account: address, amount: uint64): void {
+                uint64 currentBalance: balance(account);
+                balance(account): currentBalance + amount;
+            }
 
 			pub func mod(a: uint64, b: uint64): uint64 {
                 check(b != 0, err: "Division by zero");
