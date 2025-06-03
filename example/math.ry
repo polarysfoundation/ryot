@@ -21,6 +21,7 @@ class contract Math {
     }
 
     pub func mod(a: uint64, b: uint64): uint64 {
+        check(b != 0, err: "Division by zero");
         return (a % b);
     }
 

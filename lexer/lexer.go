@@ -1,3 +1,4 @@
+// lexer.go
 package lexer
 
 import (
@@ -46,7 +47,21 @@ func (l *Lexer) NextToken() token.Token {
 
 	switch l.ch {
 	case '=':
-		tok = newToken(token.ASSIGN, l.ch)
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.EQ, Literal: string(ch) + string(l.ch)}
+		} else {
+			tok = newToken(token.ASSIGN, l.ch)
+		}
+	case '!': // <--- AGREGAR ESTE CASO
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.NOT_EQ, Literal: string(ch) + string(l.ch)}
+		} else {
+			tok = newToken(token.BANG, l.ch)
+		}
 	case '%':
 		tok = newToken(token.MOD, l.ch)
 	case '+':
@@ -78,6 +93,38 @@ func (l *Lexer) NextToken() token.Token {
 	case '"':
 		tok.Type = token.STRING_LITERAL
 		tok.Literal = l.readString()
+	case '<': // Añadir para operadores de comparación
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.LTE, Literal: string(ch) + string(l.ch)}
+		} else {
+			tok = newToken(token.LT, l.ch)
+		}
+	case '>': // Añadir para operadores de comparación
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.GTE, Literal: string(ch) + string(l.ch)}
+		} else {
+			tok = newToken(token.GT, l.ch)
+		}
+	case '&': // Añadir para AND
+		if l.peekChar() == '&' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.AND, Literal: string(ch) + string(l.ch)}
+		} else {
+			tok = newToken(token.ILLEGAL, l.ch) // Handle single '&' as illegal or a new token
+		}
+	case '|': // Añadir para OR
+		if l.peekChar() == '|' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.OR, Literal: string(ch) + string(l.ch)}
+		} else {
+			tok = newToken(token.ILLEGAL, l.ch) // Handle single '|' as illegal or a new token
+		}
 	case 0:
 		tok.Literal = ""
 		tok.Type = token.EOF

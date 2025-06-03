@@ -439,3 +439,41 @@ func (hl *HashLiteral) TokenLiteral() string {
 }
 
 func (hl *HashLiteral) expressionNode() {}
+
+type ErrLiteral struct {
+	Token  token.Token // The 'err' token
+	Value  Expression
+	Return Expression
+}
+
+func (el *ErrLiteral) String() string {
+	var out bytes.Buffer
+	out.WriteString("err ")
+	out.WriteString(el.Value.String())
+	out.WriteString(" -> ")
+	out.WriteString(el.Return.String())
+	return out.String()
+}
+
+func (el *ErrLiteral) TokenLiteral() string {
+	return el.Token.Literal
+}
+
+func (el *ErrLiteral) expressionNode() {}
+
+type ErrValue struct {
+	Token token.Token // The 'err' token
+	Value Expression
+}
+
+func (ev *ErrValue) String() string {
+	var out bytes.Buffer
+	out.WriteString(ev.Value.String())
+	return out.String()
+}
+
+func (ev *ErrValue) TokenLiteral() string {
+	return ev.Token.Literal
+}
+
+func (ev *ErrValue) expressionNode() {}

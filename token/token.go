@@ -66,6 +66,8 @@ const (
 	CONTRACT  = "CONTRACT"
 	INTERFACE = "INTERFACE"
 	VOID      = "VOID"
+	CHECK     = "CHECK"
+	ERR       = "ERR"
 
 	// Types
 	UINT64  = "UINT64"
@@ -104,6 +106,16 @@ var keywords = map[string]TokenType{
 	"false":   BOOL_LITERAL,
 	"null":    VOID,
 	"cxid":    CXID,
+
+	"check": CHECK,
+	"err":   ERR,
+
+	"==": EQ,
+	"!=": NOT_EQ,
+	"<=": LTE,
+	">=": GTE,
+	"&&": AND,
+	"||": OR,
 }
 
 func (t TokenType) String() string {

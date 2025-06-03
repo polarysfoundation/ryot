@@ -23,6 +23,7 @@ type Generator struct {
 	contractName string        // Nombre del contrato actual.
 	abi          ABI           // Interfaz Binaria de Aplicación (ABI) del contrato.
 	currentFunc  *ABIFunction  // Puntero a la función ABI actual que se está procesando.
+	labelCounter int
 }
 
 // ABIType representa un tipo de dato en la ABI.
@@ -38,6 +39,12 @@ type ABIFunction struct {
 	Type       string    `json:"type"`                      // Tipo de elemento ABI (e.g., "function", "constructor").
 	StateMut   string    `json:"stateMutability,omitempty"` // Mutabilidad del estado (e.g., "pure", "view", "nonpayable", "payable").
 	Visibility string    `json:"visibility,omitempty"`      // Visibilidad de la función (e.g., "public", "private").
+}
+
+// Nuevo método para generar etiquetas
+func (g *Generator) newLabel() int {
+	g.labelCounter++
+	return g.labelCounter
 }
 
 // ABI es una colección de definiciones de funciones ABI.
@@ -196,6 +203,98 @@ func (g *Generator) Generate(node ast.Node) error {
 		// Por ahora, lo mantengo si es un requisito de tu formato de RYC.
 		g.emit(OpEnd, "DELETE")
 
+	case *ast.ExpressionStatement:
+		if err := g.Generate(n.Expression); err != nil {
+			return err
+		}
+	case *ast.ErrLiteral:
+		// 1. Compile the expression 'n.Value'.
+		// This will generate instructions that evaluate 'n.Value'
+		// and leave its result (e.g., a boolean from 'b != 0') on the stack.
+
+		g.emit(OpCheck)
+
+		if err := g.Generate(n.Value); err != nil {
+			return err
+		}
+
+		g.emit(OpCheckEnd)
+
+		// Crear etiqueta para el caso de éxito
+		successLabel := g.newLabel()
+
+		// 2. Now, emit the OpJumpI instruction.
+		// OpJumpI typically needs an address/label to jump to if the condition on the stack is met.
+		// The current signature `g.emit(OpJumpI, n.Value)` implies n.Value was meant to be the target address.
+		// If OpJumpI is "Jump If True", it should be OpJumpIFTrue, or you pass a boolean flag.
+		// Let's assume OpJumpI implicitly means "Jump If True" for now,
+		// and it takes a target address (placeholder for now).
+
+		// --- IMPORTANT: What should the *argument* to OpJumpI be? ---
+		// The previous error was that n.Value (an AST node) was passed as an argument.
+		// A jump instruction's argument is usually the *target address* or a *label identifier*.
+		// Since you're using 'OpJumpI' for an 'ErrLiteral', it implies a conditional error jump.
+		// You'll need a mechanism to determine *where* to jump if the error condition is met.
+
+		// For now, as a placeholder for the target address:
+		// You'll need to define a jump target, perhaps derived from a label, or
+		// calculated later during a second pass or by a linker.
+		// For a simple error, it might jump to an error handling routine's start address.
+
+		// For demonstration, let's assume OpJumpI takes an integer offset or a conceptual label.
+		// You will need to replace `someErrorHandlerAddress` with your actual jump target.
+		// This part requires understanding your VM's jump mechanism.
+
+		// Example 1: If OpJumpI expects a numerical address (offset)
+		// g.emit(OpJumpI, uint64(someErrorHandlerAddress))
+
+		// Example 2: If you manage labels (more common in a full compiler)
+		// You'd typically resolve labels to addresses in a later pass.
+		// For immediate bytecode generation, this is trickier.
+		// For now, let's use a placeholder, acknowledging it needs proper handling.
+		// If OpJumpI is 'Jump If (condition on stack) is True', it needs a destination.
+		// If OpJumpI is 'Jump if (condition on stack) is False', you might need OpJumpIFFalse.
+
+		// A common pattern for 'check (condition) else error':
+		// g.Generate(n.Value) // Evaluates 'b != 0', leaves boolean on stack
+		// g.emit(OpJumpIFTrue, uint64(skipErrorHandlerAddress)) // Jump over error code if condition is true
+		// g.emit(OpPushString, "Error message") // Push error message
+		// g.emit(OpError) // Emit error instruction
+		// g.emit(OpLabel, uint64(skipErrorHandlerAddress)) // Label for where to jump to
+
+		// If 'OpJumpI' is simply "Jump if true" to a predefined error handler,
+		// and you want it to take *no* arguments other than the boolean on stack:
+		g.emit(OpJumpI, uint64(successLabel)) // If OpJumpI just uses the top of stack as condition and jumps to a fixed error routine
+
+		if err := g.Generate(n.Return); err != nil {
+			return err
+		}
+
+		// If OpJumpI *does* take an argument, it must be a serializable type like uint64 or a string label.
+		// For now, let's assume it should take the *target address* of where to jump.
+		// This is a complex topic for a full compiler (backpatching jump targets).
+		// Let's use a placeholder to ensure the argument is serializable.
+		// You'll need to implement the logic to get the correct jump target.
+		// For a temporary fix to clear the error, you could pass a dummy value:
+		// g.emit(OpJumpI, uint64(0)) // Pass a dummy uint64 as target address for now
+
+		// The most robust way depends on your VM architecture and how jumps are handled.
+		// For an 'ErrLiteral' often it's 'CHECK (condition) ELSE JUMP_TO_ERROR_HANDLER'.
+		// Your `ErrLiteral` might mean `if not n.Value then error`.
+		// So, it would be `g.Generate(n.Value)` (leaves boolean on stack).
+		// Then `g.emit(OpJumpIFFalse, target_address_of_error_code)`.
+
+		// Assuming `OpJumpI` is meant to be a conditional jump that takes a target:
+		// You'll need to determine what that target address is.
+		// For now, if you just want to fix the serializable error:
+
+		g.emit(OpLabel, uint64(successLabel))
+
+	case *ast.ErrValue:
+		if err := g.Generate(n.Value); err != nil {
+			return err
+		}
+		g.emit(OpErr)
 	case *ast.StorageAccessStatement:
 		g.emit(OpLoad, n.Name)
 		for _, param := range n.Params {
@@ -274,6 +373,8 @@ func (g *Generator) Generate(node ast.Node) error {
 			g.emit(OpAnd)
 		case "||":
 			g.emit(OpOr)
+		case "!=":
+			g.emit(OpNeq)
 		default:
 			return fmt.Errorf("codegen: operador binario desconocido '%s'", n.Operator)
 		}

@@ -60,11 +60,18 @@ const (
 	OpAnd // 0x83 - AND lógico
 	OpOr  // 0x84 - OR lógico
 	OpNot // 0x85 - NOT lógico
+	OpNeq // 0x86 - No igual
 
 	// Operaciones de pila
 	OpPop  // 0x90 - Elimina el elemento superior de la pila
 	OpDup  // 0x91 - Duplica el elemento superior de la pila
 	OpSwap // 0x92 - Intercambia los dos elementos superiores de la pila
+
+	OpCheck    // 0xFF - verify to return
+	OpErr      // 0xFE - error handling
+	OpCheckEnd // 0xFD - verify to end
+	OpJumpEnd  // 0xFC - jump to end
+	OpLabel    // 0xFB - label for jump
 )
 
 // Instruction representa una única instrucción de bytecode.
@@ -77,6 +84,18 @@ type Instruction struct {
 // String devuelve la representación en cadena del Opcode para una mejor legibilidad.
 func (o Opcode) String() string {
 	switch o {
+	case OpCheck:
+		return "CHECK"
+	case OpCheckEnd:
+		return "CHECK_END"
+	case OpJumpEnd:
+		return "JUMP_END"
+	case OpErr:
+		return "ERR"
+	case OpNeq:
+		return "NEQ"
+	case OpLabel:
+		return "LABEL"
 	case OpConst:
 		return "CONST"
 	case OpAdd:

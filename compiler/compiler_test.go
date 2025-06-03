@@ -27,6 +27,8 @@ func TestCompiler(t *testing.T) {
 	}
 	fmt.Println(string(b))
 
+	
+
 	contract, err := Compile(string(input))
 	if err != nil {
 		t.Fatal(err)

@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -61,7 +62,7 @@ func (p *Parser) Errors() []string {
 }
 
 // ParseProgram parses the entire program and returns an AST Program node
-func (p *Parser) ParseProgram() *ast.Program {
+func (p *Parser) ParseProgram() ast.Node {
 	program := &ast.Program{}              // create a new Program node
 	program.Statements = []ast.Statement{} // initialize the Statements slice
 
@@ -79,6 +80,9 @@ func (p *Parser) ParseProgram() *ast.Program {
 		}
 
 	}
+
+	b, _ := json.Marshal(program)
+	fmt.Println(string(b)) // print the program in JSON format for debugging
 
 	return program // return the Program node
 }
@@ -569,7 +573,6 @@ func (p *Parser) parseFunc(public bool) ast.Statement {
 func (p *Parser) parseExpressionStatement() ast.Statement {
 	stmt := &ast.ExpressionStatement{Token: p.cur}
 	expr := p.parseExpression()
-	fmt.Println(expr)
 	stmt.Expression = expr
 	return stmt
 }
@@ -673,6 +676,10 @@ func (p *Parser) parseExpression() ast.Expression {
 		} else {
 			left = p.parseStorageStatement()
 		}
+	case token.CHECK:
+		left = p.parseErrLiteral()
+	case token.ERR:
+		left = p.parseErrValue()
 	case token.LPAREN:
 		p.nextToken()
 		left = p.parseExpression()
@@ -742,6 +749,39 @@ func (p *Parser) parseExpression() ast.Expression {
 	return left
 }
 
+func (p *Parser) parseErrValue() ast.Expression {
+	stmt := &ast.ErrValue{Token: p.cur}
+	p.expectPeek(token.COLON)
+	p.nextToken()
+
+	if p.cur.Type != token.STRING_LITERAL {
+		p.peekError(token.STRING_LITERAL)
+		return nil
+	}
+
+	stmt.Value = p.parseExpression()
+
+	return stmt
+}
+
+func (p *Parser) parseErrLiteral() ast.Expression {
+	stmt := &ast.ErrLiteral{Token: p.cur}
+	p.expectPeek(token.LPAREN)
+	p.nextToken()
+
+	left := p.parseExpression()
+
+	stmt.Value = left
+
+	if p.cur.Type == token.COMMA {
+		p.nextToken()
+		value := p.parseExpression()
+		stmt.Return = value
+	}
+
+	return stmt
+}
+
 func (p *Parser) parseHashLiteral() ast.Expression {
 	stmt := &ast.HashLiteral{Token: token.Token{Type: token.HASH, Literal: "hash"}}
 	stmt.Value = p.cur.Literal
@@ -800,10 +840,7 @@ func (p *Parser) parseBoolLiteral() ast.Expression {
 		stmt.Value = false
 	}
 	if p.peek.Type == token.SEMICOLON {
-		if !p.expectPeek(token.SEMICOLON) {
-			p.peekError(token.SEMICOLON)
-			return nil
-		}
+		p.expectPeek(token.SEMICOLON)
 	}
 	return stmt
 }
@@ -812,10 +849,8 @@ func (p *Parser) parseStringLiteral() ast.Expression {
 	stmt := &ast.StringLiteral{Token: token.Token{Type: token.STRING, Literal: "string"}}
 	stmt.Value = p.cur.Literal
 	if p.peek.Type == token.SEMICOLON {
-		if !p.expectPeek(token.SEMICOLON) {
-			p.peekError(token.SEMICOLON)
-			return nil
-		}
+		p.expectPeek(token.SEMICOLON)
+		return nil
 	}
 	return stmt
 }
@@ -894,9 +929,8 @@ func (p *Parser) parseStorageStatement() ast.Expression {
 
 	stmt.Value = p.parseExpression()
 
-	if !p.expectPeek(token.SEMICOLON) {
-		p.peekError(token.SEMICOLON)
-		return nil
+	if p.peek.Type == token.SEMICOLON {
+		p.expectPeek(token.SEMICOLON)
 	}
 
 	return stmt
@@ -912,10 +946,7 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 	}
 
 	if p.peek.Type == token.SEMICOLON {
-		if !p.expectPeek(token.SEMICOLON) {
-			p.peekError(token.SEMICOLON)
-			return nil
-		}
+		p.expectPeek(token.SEMICOLON)
 	}
 	return stmt
 }
@@ -924,11 +955,9 @@ func (p *Parser) parseIdentifier() ast.Expression {
 	fmt.Printf("Parsing identifier: %s \n", p.cur.Literal)
 	stmt := &ast.Identifier{Token: p.cur, Value: p.cur.Literal}
 	if p.peek.Type == token.SEMICOLON {
-		if !p.expectPeek(token.SEMICOLON) {
-			p.peekError(token.SEMICOLON)
-			return nil
-		}
+		p.expectPeek(token.SEMICOLON)
 	}
+
 	return stmt
 }
 
@@ -943,10 +972,7 @@ func (p *Parser) parseBinaryExpression(left ast.Expression) ast.Expression {
 	p.nextToken()
 	expr.Right = p.parseExpression()
 	if p.peek.Type == token.SEMICOLON {
-		if !p.expectPeek(token.SEMICOLON) {
-			p.peekError(token.SEMICOLON)
-			return nil
-		}
+		p.expectPeek(token.SEMICOLON)
 	}
 
 	return expr

@@ -28,7 +28,11 @@ type CompiledContract struct {
 func Compile(input string) (*CompiledContract, error) {
 	l := lexer.New(input)
 	p := parser.New(l)
-	program := p.ParseProgram() // Asume que ParseProgram ya maneja sus propios errores o los propaga.
+	programNode := p.ParseProgram() // Asume que ParseProgram ya maneja sus propios errores o los propaga.
+	program, ok := programNode.(*ast.Program)
+	if !ok {
+		return nil, fmt.Errorf("parser did not return *ast.Program")
+	}
 
 	buf := make([]byte, 32)
 	h := pm256.New256()
@@ -71,8 +75,8 @@ func Compile(input string) (*CompiledContract, error) {
 	}
 
 	// Si el parser tiene errores, deberías verificarlo aquí.
-	if len(p.Errors()) > 0 {
-		return nil, fmt.Errorf("errores de parsing: %s", p.Errors())
+	if compilerVersion != compiler.Version {
+		return nil, fmt.Errorf("compiler version mismatch: expected %s, got %s", compiler.Version, pragmaStmt.Value)
 	}
 
 	if compilerVersion != compiler.Version {
@@ -81,8 +85,10 @@ func Compile(input string) (*CompiledContract, error) {
 
 	g := codegen.New()
 
+	fmt.Println(programNode)
+
 	// La función Generate ahora devuelve un error.
-	if err := g.Generate(program); err != nil {
+	if err := g.Generate(ast.Node(program)); err != nil {
 		return nil, fmt.Errorf("error de generación de código: %w", err)
 	}
 

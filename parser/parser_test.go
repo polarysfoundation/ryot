@@ -31,9 +31,14 @@ func TestParse_Class(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 
-	program := p.ParseProgram()
-	if program == nil {
+	programNode := p.ParseProgram()
+	if programNode == nil {
 		t.Fatalf("ParseProgram() returned nil")
+	}
+
+	program, ok := programNode.(*ast.Program)
+	if !ok {
+		t.Fatalf("ParseProgram() did not return *ast.Program")
 	}
 
 	fmt.Println(program.Statements)
@@ -53,9 +58,14 @@ func TestParse_Enum(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 
-	program := p.ParseProgram()
-	if program == nil {
+	programNode := p.ParseProgram()
+	if programNode == nil {
 		t.Fatalf("ParseProgram() returned nil")
+	}
+
+	program, ok := programNode.(*ast.Program)
+	if !ok {
+		t.Fatalf("ParseProgram() did not return *ast.Program")
 	}
 
 	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[0].(*ast.EnumStatement))
@@ -78,9 +88,14 @@ func TestParse_Struct(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 
-	program := p.ParseProgram()
-	if program == nil {
+	programNode := p.ParseProgram()
+	if programNode == nil {
 		t.Fatalf("ParseProgram() returned nil")
+	}
+
+	program, ok := programNode.(*ast.Program)
+	if !ok {
+		t.Fatalf("ParseProgram() did not return *ast.Program")
 	}
 
 	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[0].(*ast.StructStatement).Fields)
@@ -96,9 +111,14 @@ func TestParse_StorageInit(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 
-	program := p.ParseProgram()
-	if program == nil {
+	programNode := p.ParseProgram()
+	if programNode == nil {
 		t.Fatalf("ParseProgram() returned nil")
+	}
+
+	program, ok := programNode.(*ast.Program)
+	if !ok {
+		t.Fatalf("ParseProgram() did not return *ast.Program")
 	}
 
 	fmt.Println(program.Statements[1].(*ast.ClassStatement).Body[0].(*ast.StorageDeclaration).Name)
@@ -134,9 +154,14 @@ func TestParse_Storage(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 
-	program := p.ParseProgram()
-	if program == nil {
+	programNode := p.ParseProgram()
+	if programNode == nil {
 		t.Fatalf("ParseProgram() returned nil")
+	}
+
+	program, ok := programNode.(*ast.Program)
+	if !ok {
+		t.Fatalf("ParseProgram() did not return *ast.Program")
 	}
 
 	fmt.Println(len(program.Statements[1].(*ast.ClassStatement).Body))
@@ -182,6 +207,7 @@ func TestParse_FuncWithReturn(t *testing.T) {
 			}
 
 			pub func mod(a: uint64, b: uint64): uint64 {
+				check(b != 0, err: "division by zero");
        			return (a % b);
     		}
 
@@ -192,9 +218,14 @@ func TestParse_FuncWithReturn(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 
-	program := p.ParseProgram()
-	if program == nil {
+	programNode := p.ParseProgram()
+	if programNode == nil {
 		t.Fatalf("ParseProgram() returned nil")
+	}
+
+	program, ok := programNode.(*ast.Program)
+	if !ok {
+		t.Fatalf("ParseProgram() did not return *ast.Program")
 	}
 
 	fmt.Println(len(program.Statements[1].(*ast.ClassStatement).Body))

@@ -38,6 +38,7 @@ class contract Test {
 			}
 
 			pub func mod(a: uint64, b: uint64): uint64 {
-       			return (a % b);
-    		}
+                check(b != 0, err: "Division by zero");
+                return (a % b);
+            }
 }
